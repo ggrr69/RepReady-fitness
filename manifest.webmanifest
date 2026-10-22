@@ -1,0 +1,10 @@
+{
+  "name": "RepReady Fitness",
+  "short_name": "RepReady",
+  "description": "Your training, your way.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#101512",
+  "theme_color": "#101512",
+  "icons": []
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101512"><meta name="description" content="RepReady — your workouts, your way.">
+  <link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css">
+  <title>RepReady</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar"><div class="brand-mark">R<span>R</span></div><div><div class="eyebrow">YOUR TRAINING SPACE</div><h1>RepReady</h1></div><button id="resetAll" class="icon-button" aria-label="Reset customizations" title="Reset customizations">↺</button></header>
+    <nav class="tabs" aria-label="Main navigation"><button class="tab active" data-view="programs">Programs</button><button class="tab" data-view="workout">My workout</button><button class="tab" data-view="profile">Setup</button></nav>
+    <main>
+      <section id="programsView" class="view">
+        <div class="hero"><div class="pill">BUILT AROUND YOUR GEAR</div><h2>Train your way.</h2><p>Pick a starting point. Change anything you want. Your plan should fit you.</p></div>
+        <div class="section-heading"><div><div class="eyebrow">WORKOUT LIBRARY</div><h2>Choose a program</h2></div><span id="programCount" class="muted small">4 programs</span></div>
+        <div id="programList" class="program-list"></div>
+        <p class="footnote">Programs are starting points, not rules. Adjust exercises, sets, reps and rest whenever you need.</p>
+      </section>
+      <section id="workoutView" class="view hidden">
+        <div class="section-heading"><div><div class="eyebrow">YOUR CURRENT PLAN</div><h2 id="currentTitle">Choose a program</h2></div><button id="backToPrograms" class="text-button">Browse</button></div>
+        <div id="emptyWorkout" class="empty-state"><div class="empty-icon">＋</div><h3>No program selected yet</h3><p>Browse the library and choose a plan to make it yours.</p><button class="primary" data-goto="programs">Explore programs</button></div>
+        <div id="workoutContent" class="hidden"><div class="workout-summary" id="workoutSummary"></div><div class="toolbar"><label class="field-label" for="daySelect">Workout day</label><select id="daySelect"></select><button id="addExercise" class="secondary">＋ Add exercise</button></div><div id="exerciseList"></div><div class="save-row"><button id="saveSession" class="primary">Save workout changes</button><button id="restoreProgram" class="secondary">Restore original</button></div><p id="saveMessage" class="save-message" role="status"></p></div>
+      </section>
+      <section id="profileView" class="view hidden">
+        <div class="hero compact"><div class="pill">PERSONAL SETUP</div><h2>Your equipment. Your goals.</h2><p>These are the defaults used to shape RepReady's starter programs.</p></div>
+        <div class="panel"><h3>Available equipment</h3><div class="equipment-grid"><label><input type="checkbox" checked disabled> Barbell + plates (205 lb)</label><label><input type="checkbox" checked disabled> Squat rack + pull-up bar</label><label><input type="checkbox" checked disabled> Bench</label><label><input type="checkbox" checked disabled> Pair of 35 lb dumbbells</label></div><p class="muted small">Equipment is prefilled from your current home gym. Editing equipment will be added in a later version.</p></div>
+        <div class="panel"><h3>Main goals</h3><div class="goal-chips"><span>Lose body fat</span><span>Build / keep muscle</span><span>Move better</span></div><p class="muted">Next up: editable nutrition targets, food logging, guided mobility, and workout history.</p></div>
+        <div class="panel"><h3>Data & privacy</h3><p class="muted">This starter version saves your choices in this browser on this device. Clearing browser data can erase them. It does not send workout data to a server.</p><button id="exportData" class="secondary">Export my data</button></div>
+      </section>
+    </main>
+    <footer><span class="brand-footer">RepReady</span><span>Progress, on your terms.</span></footer>
+  </div>
+  <dialog id="programDialog"><div class="dialog-head"><div><div class="eyebrow">PROGRAM PREVIEW</div><h2 id="dialogTitle">Program</h2></div><button id="closeDialog" class="icon-button" aria-label="Close">×</button></div><p id="dialogDescription" class="muted"></p><div id="dialogDays" class="preview-days"></div><button id="chooseProgram" class="primary full">Use this program</button></dialog>
+  <dialog id="exerciseDialog"><div class="dialog-head"><div><div class="eyebrow">CUSTOMIZE SESSION</div><h2 id="exerciseDialogTitle">Add exercise</h2></div><button id="closeExerciseDialog" class="icon-button" aria-label="Close">×</button></div><form id="exerciseForm"><label class="field-label" for="exerciseName">Exercise name</label><input id="exerciseName" required placeholder="e.g. Dumbbell row"><div class="form-grid"><div><label class="field-label" for="exerciseSets">Sets</label><input id="exerciseSets" type="number" min="1" max="10" value="3" required></div><div><label class="field-label" for="exerciseReps">Reps</label><input id="exerciseReps" value="8–12" required></div><div><label class="field-label" for="exerciseRest">Rest (sec)</label><input id="exerciseRest" type="number" min="0" max="600" value="90" required></div></div><button class="primary full" type="submit">Save exercise</button></form></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body></html>
