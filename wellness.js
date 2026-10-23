@@ -41,10 +41,10 @@
     $('mobilityDone').classList.toggle('secondary',well.extraMobility);
   }
   function showView(view) {
-    const map={today:'todayView',workouts:'programsView',workout:'workoutView',nutrition:'nutritionView',habits:'habitsView',progress:'progressView',profile:'profileView'};
+    const map={today:'todayView',workouts:'programsView',programs:'programsView',workout:'workoutView',nutrition:'nutritionView',habits:'habitsView',progress:'progressView',profile:'profileView'};
     document.querySelectorAll('.view').forEach(s=>s.classList.add('hidden'));
     const target=$(map[view]||'todayView'); if(target)target.classList.remove('hidden');
-    document.querySelectorAll('.main-tabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+    document.querySelectorAll('.main-tabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.view===(view==='programs'?'workouts':view)));
     if(view==='workout' && typeof window.renderWorkout==='function') window.renderWorkout();
     if(view==='workouts') $('programsView').classList.remove('hidden');
     try { window.scrollTo({top:0,behavior:'smooth'}); } catch {}
