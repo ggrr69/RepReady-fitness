@@ -2,16 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#101512"><meta name="description" content="RepReady — your workouts, your way.">
+  <meta name="theme-color" content="#173F35"><meta name="description" content="Goodstride Club — build strength, find your stride, and keep going.">
   <link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css">
-  <title>RepReady</title>
+  <title>Goodstride Club</title>
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar"><div class="brand-mark">R<span>R</span></div><div><div class="eyebrow">YOUR TRAINING SPACE</div><h1>RepReady</h1></div><button id="resetAll" class="icon-button" aria-label="Reset customizations" title="Reset customizations">↺</button></header>
-    <nav class="tabs" aria-label="Main navigation"><button class="tab active" data-view="programs">Programs</button><button class="tab" data-view="workout">My workout</button><button class="tab" data-view="profile">Setup</button></nav>
+    <header class="topbar"><div class="brand-mark" aria-hidden="true">↗</div><div><div class="eyebrow">YOUR WELLNESS SPACE</div><h1>Goodstride Club</h1></div><button id="resetAll" class="icon-button" aria-label="Reset customizations" title="Reset customizations">↺</button></header>
+    <nav class="tabs main-tabs" aria-label="Main navigation"><button class="tab active" data-view="today">Today</button><button class="tab" data-view="workouts">Workouts</button><button class="tab" data-view="nutrition">Nutrition</button><button class="tab" data-view="habits">Habits</button><button class="tab" data-view="progress">Progress</button></nav>
     <main>
-      <section id="programsView" class="view">
+      <section id="todayView" class="view">
+        <div class="hero today-hero"><div class="pill">A LITTLE BETTER, OFTEN</div><h2>Make today count.</h2><p>Build strength, fuel your body, and keep your own pace. Progress doesn’t need to be perfect.</p></div>
+        <div class="section-heading"><div><div class="eyebrow">YOUR DAY AT A GLANCE</div><h2>Today, your way</h2></div><span class="muted small" id="todayDate"></span></div>
+        <div class="today-grid">
+          <article class="well-card workout-today"><div class="well-icon">↗</div><div class="eyebrow">MOVEMENT</div><h3>Your workout</h3><p class="muted" id="todayWorkoutText">Choose a program or keep it a recovery day.</p><button class="primary" data-well-goto="workouts">View workouts</button><button class="text-button" data-well-goto="workout">Open my session</button></article>
+          <article class="well-card"><div class="well-icon">◒</div><div class="eyebrow">NOURISHMENT</div><h3><span id="todayCalories">0</span> <span class="muted">/ 1,850 cal</span></h3><div class="progress-track"><span id="todayCalBar"></span></div><p class="muted"><strong id="todayProtein">0</strong> / 180 g protein</p><button class="secondary" data-well-goto="nutrition">Log food</button></article>
+          <article class="well-card"><div class="well-icon">✳</div><div class="eyebrow">SMALL WINS</div><h3><span id="todayHabits">0</span> of 3 habits</h3><p class="muted">Every little bit adds up.</p><button class="secondary" data-well-goto="habits">Check in</button></article>
+        </div>
+        <div class="gentle-note"><strong>Remember:</strong> consistency beats perfection. Do what you can with the day you have.</div>
+      </section>
+      <section id="nutritionView" class="view hidden">
+        <div class="hero compact"><div class="pill">FUEL YOUR DAY</div><h2>Keep it simple.</h2><p>Start with calories and protein. The rest is helpful detail, not homework.</p></div>
+        <div class="macro-overview">
+          <div><div class="eyebrow">CALORIES</div><div class="macro-number"><span id="caloriesTotal">0</span><small> / 1,850</small></div><div class="progress-track"><span id="calorieBar"></span></div></div>
+          <div><div class="eyebrow">PROTEIN</div><div class="macro-number"><span id="proteinTotal">0</span><small> / 180 g</small></div><div class="progress-track protein-track"><span id="proteinBar"></span></div></div>
+          <button class="text-button detail-toggle" id="toggleMacroDetails">Show carbs & fat ▾</button>
+          <div id="macroDetails" class="macro-details hidden"><div><span>Carbs</span><strong id="carbsTotal">0 / 150 g</strong></div><div><span>Fat</span><strong id="fatTotal">0 / 60 g</strong></div></div>
+        </div>
+        <div class="section-heading"><div><div class="eyebrow">FOOD JOURNAL</div><h2>What have you eaten?</h2></div></div>
+        <form id="foodForm" class="food-form"><label class="field-label" for="foodName">Food or meal</label><input id="foodName" placeholder="e.g. Greek yogurt, chicken bowl" required><div class="food-fields"><div><label class="field-label" for="foodCalories">Calories</label><input id="foodCalories" type="number" min="0" max="5000" placeholder="250" required></div><div><label class="field-label" for="foodProtein">Protein (g)</label><input id="foodProtein" type="number" min="0" max="300" placeholder="25" required></div></div><button class="primary full" type="submit">＋ Add food</button><p class="muted small">Quick manual entry for now. Barcode scanning and a searchable food database can be added in a later phase.</p></form>
+        <div class="section-heading"><div><div class="eyebrow">TODAY'S LOG</div><h2>Meals & snacks</h2></div><button id="clearFoodLog" class="text-button">Clear day</button></div>
+        <div id="foodLog" class="food-log"></div>
+      </section>
+      <section id="habitsView" class="view hidden">
+        <div class="hero compact"><div class="pill">THE FOUNDATIONS</div><h2>Small wins count.</h2><p>Pick a few habits that make you feel better. No streak pressure, no guilt.</p></div>
+        <div class="habit-list" id="habitList"></div>
+        <div class="panel"><h3>A little mobility goes a long way</h3><p class="muted">Try 15 minutes of comfortable movement today. Keep it gentle and skip anything that causes pain.</p><button class="primary" id="mobilityDone">✓ Mark mobility complete</button></div>
+      </section>
+      <section id="progressView" class="view hidden">
+        <div class="hero compact"><div class="pill">YOUR OWN PACE</div><h2>Progress is more than a number.</h2><p>Notice the work you put in, the habits you build, and how you feel along the way.</p></div>
+        <div class="progress-grid"><article class="well-card"><div class="eyebrow">FOOD LOGGED</div><h3 id="progressFoodDays">0 calories</h3><p class="muted">Logged so far today</p></article><article class="well-card"><div class="eyebrow">HABITS</div><h3 id="progressHabitCount">0 / 3</h3><p class="muted">Daily check-ins completed</p></article><article class="well-card"><div class="eyebrow">WORKOUT PLAN</div><h3 id="progressProgram">Not chosen yet</h3><p class="muted">Your plan can change as you do.</p><button class="secondary" data-well-goto="workouts">Browse programs</button></article></div>
+        <div class="gentle-note">Your data stays in this browser on this device in this prototype. It is not yet synced between devices.</div>
+      </section>
+      <section id="programsView" class="view hidden" class="view">
         <div class="hero"><div class="pill">BUILT AROUND YOUR GEAR</div><h2>Train your way.</h2><p>Pick a starting point. Change anything you want. Your plan should fit you.</p></div>
         <div class="section-heading"><div><div class="eyebrow">WORKOUT LIBRARY</div><h2>Choose a program</h2></div><span id="programCount" class="muted small">4 programs</span></div>
         <div id="programList" class="program-list"></div>
@@ -29,10 +62,10 @@
         <div class="panel"><h3>Data & privacy</h3><p class="muted">This starter version saves your choices in this browser on this device. Clearing browser data can erase them. It does not send workout data to a server.</p><button id="exportData" class="secondary">Export my data</button></div>
       </section>
     </main>
-    <footer><span class="brand-footer">RepReady</span><span>Progress, on your terms.</span></footer>
+    <footer><span class="brand-footer">Goodstride Club</span><span>Find your stride. Keep going.</span></footer>
   </div>
   <dialog id="programDialog"><div class="dialog-head"><div><div class="eyebrow">PROGRAM PREVIEW</div><h2 id="dialogTitle">Program</h2></div><button id="closeDialog" class="icon-button" aria-label="Close">×</button></div><p id="dialogDescription" class="muted"></p><div id="dialogDays" class="preview-days"></div><button id="chooseProgram" class="primary full">Use this program</button></dialog>
   <dialog id="exerciseDialog"><div class="dialog-head"><div><div class="eyebrow">CUSTOMIZE SESSION</div><h2 id="exerciseDialogTitle">Add exercise</h2></div><button id="closeExerciseDialog" class="icon-button" aria-label="Close">×</button></div><form id="exerciseForm"><label class="field-label" for="exerciseName">Exercise name</label><input id="exerciseName" required placeholder="e.g. Dumbbell row"><div class="form-grid"><div><label class="field-label" for="exerciseSets">Sets</label><input id="exerciseSets" type="number" min="1" max="10" value="3" required></div><div><label class="field-label" for="exerciseReps">Reps</label><input id="exerciseReps" value="8–12" required></div><div><label class="field-label" for="exerciseRest">Rest (sec)</label><input id="exerciseRest" type="number" min="0" max="600" value="90" required></div></div><button class="primary full" type="submit">Save exercise</button></form></dialog>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js"></script>
+  <script src="app.js"></script><script src="wellness.js"></script>
 </body></html>
