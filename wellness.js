@@ -1,0 +1,69 @@
+/* Goodstride Club: local-only nutrition, habits and dashboard layer.
+   This adds wellness views while preserving the original workout program engine. */
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const WELL_KEY = 'goodstride-wellness-v1';
+  const defaultWell = () => ({ foods: [], habits: { water:false, mobility:false, protein:false }, extraMobility:false });
+  let well;
+  try { well = JSON.parse(localStorage.getItem(WELL_KEY)) || defaultWell(); } catch { well = defaultWell(); }
+  well.habits = { ...defaultWell().habits, ...(well.habits || {}) };
+  well.foods = Array.isArray(well.foods) ? well.foods : [];
+  const saveWell = () => { try { localStorage.setItem(WELL_KEY, JSON.stringify(well)); } catch {} };
+  const safe = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const totals = () => well.foods.reduce((a,f) => ({cal:a.cal+f.cal, protein:a.protein+f.protein, carbs:a.carbs+(f.carbs||0), fat:a.fat+(f.fat||0)}),{cal:0,protein:0,carbs:0,fat:0});
+  const habits = [
+    {id:'water',name:'Drink some water',desc:'Hydration is a small win worth repeating.',icon:'◌'},
+    {id:'protein',name:'Get a protein serving',desc:'Build meals around a helpful protein source.',icon:'◒'},
+    {id:'mobility',name:'Move for 15 minutes',desc:'Stretch, walk, or do comfortable mobility work.',icon:'↗'}
+  ];
+  function updateDashboard() {
+    const t=totals(), done=habits.filter(h=>well.habits[h.id]).length;
+    $('todayCalories').textContent=t.cal.toLocaleString(); $('todayProtein').textContent=t.protein;
+    $('todayCalBar').style.width=Math.min(100,t.cal/1850*100)+'%';
+    $('todayHabits').textContent=done;
+    $('caloriesTotal').textContent=t.cal.toLocaleString(); $('proteinTotal').textContent=t.protein;
+    $('carbsTotal').textContent=t.carbs+' / 150 g'; $('fatTotal').textContent=t.fat+' / 60 g';
+    $('calorieBar').style.width=Math.min(100,t.cal/1850*100)+'%'; $('proteinBar').style.width=Math.min(100,t.protein/180*100)+'%';
+    $('progressFoodDays').textContent=t.cal.toLocaleString()+' calories'; $('progressHabitCount').textContent=done+' / 3';
+    const currentTitle=$('currentTitle')?.textContent;
+    $('progressProgram').textContent=(currentTitle && currentTitle!=='Choose a program')?currentTitle:'Not chosen yet';
+    $('todayWorkoutText').textContent=(currentTitle && currentTitle!=='Choose a program')?'Your plan is ready whenever you are.':'Choose a program or keep it a recovery day.';
+  }
+  function renderFood() {
+    const t=totals();
+    $('foodLog').innerHTML=well.foods.length ? well.foods.map(f=>'<article class="food-item"><div class="food-dot">＋</div><div class="food-copy"><strong>'+safe(f.name)+'</strong><small>'+f.protein+' g protein'+((f.carbs||f.fat)?' · '+(f.carbs||0)+' g carbs · '+(f.fat||0)+' g fat':'')+'</small></div><div class="food-kcal">'+f.cal+' cal</div><button class="remove-food" data-remove-food="'+f.id+'" aria-label="Remove '+safe(f.name)+'">×</button></article>').join('') : '<div class="empty-state"><div class="empty-icon">＋</div><h3>Your food log starts here</h3><p>Add a food above. You can keep it simple and track calories and protein first.</p></div>';
+    document.querySelectorAll('[data-remove-food]').forEach(b=>b.addEventListener('click',()=>{well.foods=well.foods.filter(f=>f.id!==b.dataset.removeFood);saveWell();renderFood();updateDashboard()}));
+  }
+  function renderHabits() {
+    $('habitList').innerHTML=habits.map(h=>'<label class="habit-item '+(well.habits[h.id]?'done':'')+'"><input class="habit-check" type="checkbox" data-habit="'+h.id+'" '+(well.habits[h.id]?'checked':'')+'><span class="well-icon">'+h.icon+'</span><span class="habit-copy"><strong>'+h.name+'</strong><p>'+h.desc+'</p></span></label>').join('');
+    document.querySelectorAll('[data-habit]').forEach(c=>c.addEventListener('change',()=>{well.habits[c.dataset.habit]=c.checked;saveWell();renderHabits();updateDashboard()}));
+    $('mobilityDone').textContent=well.extraMobility?'✓ Mobility complete today':'✓ Mark mobility complete';
+    $('mobilityDone').classList.toggle('secondary',well.extraMobility);
+  }
+  function showView(view) {
+    const map={today:'todayView',workouts:'programsView',workout:'workoutView',nutrition:'nutritionView',habits:'habitsView',progress:'progressView',profile:'profileView'};
+    document.querySelectorAll('.view').forEach(s=>s.classList.add('hidden'));
+    const target=$(map[view]||'todayView'); if(target)target.classList.remove('hidden');
+    document.querySelectorAll('.main-tabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+    if(view==='workout' && typeof window.renderWorkout==='function') window.renderWorkout();
+    if(view==='workouts') $('programsView').classList.remove('hidden');
+    try { window.scrollTo({top:0,behavior:'smooth'}); } catch {}
+    updateDashboard();
+  }
+  // Existing workout code's callbacks resolve this global function, so its editor stays intact.
+  window.setTab = showView;
+  document.querySelectorAll('.main-tabs .tab').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+  document.querySelectorAll('[data-well-goto]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.wellGoto)));
+  $('foodForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const name=$('foodName').value.trim(), cal=Number($('foodCalories').value), protein=Number($('foodProtein').value);
+    if(!name || !Number.isFinite(cal) || !Number.isFinite(protein) || cal<0 || protein<0)return;
+    well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,cal,protein,carbs:0,fat:0});
+    saveWell(); e.target.reset(); renderFood(); updateDashboard();
+  });
+  $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
+  $('toggleMacroDetails').addEventListener('click',()=>{const el=$('macroDetails');const hidden=el.classList.toggle('hidden');$('toggleMacroDetails').textContent=hidden?'Show carbs & fat ▾':'Hide carbs & fat ▴'});
+  $('mobilityDone').addEventListener('click',()=>{well.extraMobility=!well.extraMobility;well.habits.mobility=well.extraMobility;saveWell();renderHabits();updateDashboard()});
+  $('todayDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  renderFood();renderHabits();updateDashboard();showView('today');
+})();
