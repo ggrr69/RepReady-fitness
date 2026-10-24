@@ -158,12 +158,30 @@
   $('barcodeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupBarcode($('barcodeInput').value.trim())}});
   $('scanBarcodeBtn').addEventListener('click',async()=>{
     const reader=$('barcodeReader');
-    if(scanner){try{await scanner.stop();}catch{} scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';return;}
+    if(scanner){try{await scanner.stop();}catch{} scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';foodSearchResults.innerHTML='<p class="muted small">Scanner stopped.</p>';return;}
     if(!window.Html5Qrcode){foodSearchResults.innerHTML='<p class="muted small">Camera scanner could not load. Enter the barcode number instead.</p>';return;}
-    reader.classList.remove('hidden'); reader.innerHTML='<p id="scannerStatus" class="scanner-status">Starting camera…</p>'; $('scanBarcodeBtn').textContent='Stop scan';
-    scanner=new Html5Qrcode('barcodeReader',{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.CODABAR]});
-    try{await scanner.start({facingMode:'environment'},{fps:12,qrbox:{width:260,height:110},aspectRatio:1.777,disableFlip:false},async(decoded)=>{const code=String(decoded).replace(/\D/g,'');$('barcodeInput').value=code;foodSearchResults.innerHTML='<p class="muted small">Barcode detected: '+safe(code)+'. Looking up product…</p>';try{await scanner.stop();}catch{}scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';lookupBarcode(code);},()=>{const status=$('scannerStatus');if(status)status.textContent='Camera is running — center the barcode in the box and hold steady.';});const status=$('scannerStatus');if(status)status.textContent='Camera is running — center the barcode in the box and hold steady.';}
-    catch{scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';foodSearchResults.innerHTML='<p class="muted small">Camera access wasn’t available. Allow camera access in your browser settings or enter the barcode number.</p>';}
+    reader.classList.remove('hidden');
+    foodSearchResults.innerHTML='<p id="scannerStatus" class="scanner-status">Starting camera…</p>';
+    $('scanBarcodeBtn').textContent='Stop scan';
+    try {
+      scanner=new Html5Qrcode('barcodeReader',{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.CODABAR]});
+      await scanner.start({facingMode:'environment'},{fps:12,qrbox:{width:260,height:110},aspectRatio:1.777,disableFlip:false},async(decoded)=>{
+        const code=String(decoded).replace(/\D/g,'');
+        $('barcodeInput').value=code;
+        foodSearchResults.innerHTML='<p class="muted small">Barcode detected: '+safe(code)+'. Looking up product…</p>';
+        try{await scanner.stop();}catch{}
+        scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';
+        lookupBarcode(code);
+      },()=>{
+        const status=$('scannerStatus');
+        if(status)status.textContent='Camera is running — center the barcode in the box and hold steady.';
+      });
+      const status=$('scannerStatus');
+      if(status)status.textContent='Camera is running — center the barcode in the box and hold steady.';
+    } catch(err) {
+      scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';
+      foodSearchResults.innerHTML='<p class="muted small">Scanner could not start: '+safe(err?.message||String(err))+'. You can enter the barcode number manually.</p>';
+    }
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
   $('toggleMacroDetails').addEventListener('click',()=>{const el=$('macroDetails');const hidden=el.classList.toggle('hidden');$('toggleMacroDetails').textContent=hidden?'Show carbs & fat ▾':'Hide carbs & fat ▴'});
