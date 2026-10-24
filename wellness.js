@@ -26,7 +26,7 @@
     return {name:p.product_name||p.product_name_en||'Packaged food',cal:number(n['energy-kcal_100g']??n['energy-kcal']),protein:number(n.proteins_100g),carbs:number(n.carbohydrates_100g),fat:number(n.fat_100g),serving:'per 100 g'};
   }
   async function lookupBarcode(code) {
-    if(!/^\\d{8,14}$/.test(code)){foodSearchResults.innerHTML='<p class="muted small">Enter a valid barcode number.</p>';return;}
+    if(!/^\d{8,14}$/.test(code)){foodSearchResults.innerHTML='<p class="muted small">Enter a valid barcode number.</p>';return;}
     foodSearchResults.innerHTML='<p class="muted small">Looking up product…</p>';
     try {
       const res=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'?fields=product_name,product_name_en,nutriments,serving_size');
