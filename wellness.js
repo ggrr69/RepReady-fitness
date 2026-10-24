@@ -17,7 +17,7 @@
     foodSearchResults.innerHTML = items.map((f,i)=>'<button type="button" class="food-result" data-food-result="'+i+'"><strong>'+safe(f.name)+'</strong><small>'+Math.round(f.cal)+' cal · '+Math.round(f.protein)+' g protein · '+Math.round(f.carbs)+' g carbs · '+Math.round(f.fat)+' g fat'+(f.serving?' · '+safe(f.serving):'')+'</small></button>').join('');
     foodSearchResults.querySelectorAll('[data-food-result]').forEach(b=>b.addEventListener('click',()=> {
       const f=items[Number(b.dataset.foodResult)];
-      $('foodName').value=f.name; $('foodCalories').value=Math.round(f.cal); $('foodProtein').value=Math.round(f.protein); $('foodCarbs').value=Math.round(f.carbs); $('foodFat').value=Math.round(f.fat);
+      $('foodName').value=f.name; $('foodCalories').value=Number(f.cal.toFixed(1)); $('foodProtein').value=Number(f.protein.toFixed(1)); $('foodCarbs').value=Number(f.carbs.toFixed(1)); $('foodFat').value=Number(f.fat.toFixed(1)); $('foodServingGrams').value=100;
       $('foodForm').scrollIntoView({behavior:'smooth',block:'start'});
     }));
   }
@@ -113,12 +113,15 @@
   $('foodForm').addEventListener('submit',e=>{
     e.preventDefault();
     const name=$('foodName').value.trim();
-    const cal=Number($('foodCalories').value);
-    const protein=Number($('foodProtein').value);
-    const carbs=Number($('foodCarbs').value||0);
-    const fat=Number($('foodFat').value||0);
-    if(!name || ![cal,protein,carbs,fat].every(Number.isFinite) || [cal,protein,carbs,fat].some(v=>v<0))return;
-    well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,cal,protein,carbs,fat});
+    const baseCal=Number($('foodCalories').value);
+    const baseProtein=Number($('foodProtein').value);
+    const baseCarbs=Number($('foodCarbs').value||0);
+    const baseFat=Number($('foodFat').value||0);
+    const grams=Number($('foodServingGrams').value);
+    if(!name || ![baseCal,baseProtein,baseCarbs,baseFat,grams].every(Number.isFinite) || [baseCal,baseProtein,baseCarbs,baseFat].some(v=>v<0) || grams<=0)return;
+    const factor=grams/100;
+    const cal=Math.round(baseCal*factor), protein=Number((baseProtein*factor).toFixed(1)), carbs=Number((baseCarbs*factor).toFixed(1)), fat=Number((baseFat*factor).toFixed(1));
+    well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name+' ('+grams+' g)',cal,protein,carbs,fat,grams});
     saveWell(); e.target.reset(); renderFood(); updateDashboard();
   });
   $('searchFoodBtn').addEventListener('click',()=>searchFoods($('foodSearch').value));
