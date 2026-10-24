@@ -174,33 +174,53 @@
   $('scanBarcodeBtn').addEventListener('click',async()=>{
     const reader=$('barcodeReader');
     if(scanner){
-      try{await scanner.stop();}catch{}
-      scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
+      try{Quagga.offDetected(onQuaggaDetected);Quagga.stop();}catch{}
+      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
       return;
     }
-    if(!window.Html5Qrcode){
-      scannerNotice('Camera scanner library did not load. Please refresh this page or enter the barcode manually.');
+    if(!window.Quagga){
+      scannerNotice('Barcode decoder did not load. Please refresh and try again.');
       return;
     }
     reader.classList.remove('hidden');
-    scannerNotice('Starting camera…');
+    reader.innerHTML='';
+    scannerNotice('Starting barcode scanner…');
     $('scanBarcodeBtn').textContent='Stop scan';
+    let accepted=false;
+    window.onQuaggaDetected = async (result) => {
+      if(accepted)return;
+      const raw=result?.codeResult?.code||'';
+      const format=result?.codeResult?.format||'';
+      const code=String(raw).replace(/\D/g,'');
+      if(code.length<8||code.length>14)return;
+      if(!['ean_13','ean_8','upc_a','upc_e'].includes(format))return;
+      accepted=true;
+      $('barcodeInput').value=code;
+      scannerNotice('Barcode detected — looking up product…');
+      try{Quagga.offDetected(window.onQuaggaDetected);Quagga.stop();}catch{}
+      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
+      lookupBarcode(code);
+    };
+    scanner={active:true};
     try{
-      scanner=new Html5Qrcode('barcodeReader',{verbose:false,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF]});
-      await scanner.start({facingMode:'environment'},{fps:20,aspectRatio:1.777,disableFlip:false},async(decoded)=>{
-        const code=String(decoded).replace(/\D/g,'');
-        if(code.length<8||code.length>14)return;
-        $('barcodeInput').value=code;
-        scannerNotice('Barcode detected — looking up product…');
-        try{await scanner.stop();}catch{}
-        scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
-        lookupBarcode(code);
-      },()=>{scannerNotice('Camera is running — center the barcode in the box and hold steady.');});
-      scannerNotice('Camera is running — center the barcode in the box and hold steady.');
+      Quagga.init({
+        inputStream:{name:'Goodstride camera',type:'LiveStream',target:reader,constraints:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},area:{top:'5%',right:'5%',left:'5%',bottom:'5%'}},
+        locator:{patchSize:'medium',halfSample:false},
+        decoder:{readers:['ean_reader','ean_8_reader','upc_reader','upc_e_reader']},
+        locate:true,numOfWorkers:0
+      },(err)=>{
+        if(err){
+          scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';
+          scannerNotice('Barcode scanner could not start: '+(err.message||String(err)));
+          return;
+        }
+        Quagga.onDetected(window.onQuaggaDetected);
+        Quagga.start();
+        scannerNotice('Camera is running — hold the barcode inside the camera view.');
+      });
     }catch(err){
-      try{if(scanner)await scanner.stop();}catch{}
-      scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';
-      scannerNotice('Scanner could not start: '+(err?.message||String(err))+'. Enter the barcode manually.');
+      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';
+      scannerNotice('Barcode scanner could not start: '+(err?.message||String(err)));
     }
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
