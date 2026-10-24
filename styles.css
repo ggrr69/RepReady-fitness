@@ -112,3 +112,5 @@ footer{color:#526258}
 #programDialog .preview-day{background:#fffdf8!important;color:#173f35!important}
 #programDialog .preview-day li{font-weight:500}
 #programDialog .muted{color:#405349!important}
+
+.food-search{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}.search-row{display:flex;gap:8px;margin:7px 0}.search-row input{min-width:0;flex:1}.food-search-results{display:grid;gap:7px;margin-top:8px}.food-result{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px;color:var(--text);cursor:pointer}.food-result small{color:var(--muted);line-height:1.4}#barcodeReader{max-width:100%;margin:12px 0;overflow:hidden;border-radius:12px}#barcodeReader video{max-width:100%;border-radius:12px}.food-fields{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:420px){.barcode-row{flex-wrap:wrap}.barcode-row input{flex-basis:100%}.barcode-row button{flex:1}}
