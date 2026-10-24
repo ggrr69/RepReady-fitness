@@ -9,6 +9,43 @@
   well.habits = { ...defaultWell().habits, ...(well.habits || {}) };
   well.foods = Array.isArray(well.foods) ? well.foods : [];
   const saveWell = () => { try { localStorage.setItem(WELL_KEY, JSON.stringify(well)); } catch {} };
+  let scanner = null;
+  const foodSearchResults = $('foodSearchResults');
+  const number = (v) => Number.isFinite(Number(v)) ? Math.max(0, Number(v)) : 0;
+  function showFoodResults(items, source) {
+    if (!items.length) { foodSearchResults.innerHTML = '<p class="muted small">No matching foods found. Try another search or enter the details manually.</p>'; return; }
+    foodSearchResults.innerHTML = items.map((f,i)=>'<button type="button" class="food-result" data-food-result="'+i+'"><strong>'+safe(f.name)+'</strong><small>'+Math.round(f.cal)+' cal · '+Math.round(f.protein)+' g protein · '+Math.round(f.carbs)+' g carbs · '+Math.round(f.fat)+' g fat'+(f.serving?' · '+safe(f.serving):'')+'</small></button>').join('');
+    foodSearchResults.querySelectorAll('[data-food-result]').forEach(b=>b.addEventListener('click',()=> {
+      const f=items[Number(b.dataset.foodResult)];
+      $('foodName').value=f.name; $('foodCalories').value=Math.round(f.cal); $('foodProtein').value=Math.round(f.protein); $('foodCarbs').value=Math.round(f.carbs); $('foodFat').value=Math.round(f.fat);
+      $('foodForm').scrollIntoView({behavior:'smooth',block:'start'});
+    }));
+  }
+  function fromOFF(p) {
+    const n=p.nutriments||{};
+    return {name:p.product_name||p.product_name_en||'Packaged food',cal:number(n['energy-kcal_100g']??n['energy-kcal']),protein:number(n.proteins_100g),carbs:number(n.carbohydrates_100g),fat:number(n.fat_100g),serving:'per 100 g'};
+  }
+  async function lookupBarcode(code) {
+    if(!/^\\d{8,14}$/.test(code)){foodSearchResults.innerHTML='<p class="muted small">Enter a valid barcode number.</p>';return;}
+    foodSearchResults.innerHTML='<p class="muted small">Looking up product…</p>';
+    try {
+      const res=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'?fields=product_name,product_name_en,nutriments,serving_size');
+      const data=await res.json();
+      if(data.status!==1||!data.product){foodSearchResults.innerHTML='<p class="muted small">Product not found. You can enter its label values manually.</p>';return;}
+      const f=fromOFF(data.product); if(data.product.serving_size)f.serving=data.product.serving_size+' (database values may be per 100 g)';
+      showFoodResults([f],'barcode');
+    } catch { foodSearchResults.innerHTML='<p class="muted small">Couldn’t reach the product database. Check your connection and try again.</p>'; }
+  }
+  async function searchFoods(query) {
+    if(!query.trim())return;
+    foodSearchResults.innerHTML='<p class="muted small">Searching foods…</p>';
+    try {
+      const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(query)+'&search_simple=1&action=process&json=1&page_size=12&fields=product_name,nutriments,serving_size';
+      const data=await (await fetch(url)).json();
+      const items=(data.products||[]).filter(p=>p.product_name&&p.nutriments).map(p=>fromOFF(p));
+      showFoodResults(items,'search');
+    } catch { foodSearchResults.innerHTML='<p class="muted small">Search is temporarily unavailable. You can still enter food manually.</p>'; }
+  }
   const safe = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const totals = () => well.foods.reduce((a,f) => ({cal:a.cal+f.cal, protein:a.protein+f.protein, carbs:a.carbs+(f.carbs||0), fat:a.fat+(f.fat||0)}),{cal:0,protein:0,carbs:0,fat:0});
   const habits = [
@@ -58,8 +95,21 @@
     e.preventDefault();
     const name=$('foodName').value.trim(), cal=Number($('foodCalories').value), protein=Number($('foodProtein').value);
     if(!name || !Number.isFinite(cal) || !Number.isFinite(protein) || cal<0 || protein<0)return;
-    well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,cal,protein,carbs:0,fat:0});
+    well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,cal,protein,carbs,fat});
     saveWell(); e.target.reset(); renderFood(); updateDashboard();
+  });
+  $('searchFoodBtn').addEventListener('click',()=>searchFoods($('foodSearch').value));
+  $('foodSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchFoods($('foodSearch').value)}});
+  $('lookupBarcodeBtn').addEventListener('click',()=>lookupBarcode($('barcodeInput').value.trim()));
+  $('barcodeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupBarcode($('barcodeInput').value.trim())}});
+  $('scanBarcodeBtn').addEventListener('click',async()=>{
+    const reader=$('barcodeReader');
+    if(scanner){try{await scanner.stop();}catch{} scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';return;}
+    if(!window.Html5Qrcode){foodSearchResults.innerHTML='<p class="muted small">Camera scanner could not load. Enter the barcode number instead.</p>';return;}
+    reader.classList.remove('hidden'); $('scanBarcodeBtn').textContent='Stop scan';
+    scanner=new Html5Qrcode('barcodeReader');
+    try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:140}},async(decoded)=>{$('barcodeInput').value=decoded;try{await scanner.stop();}catch{}scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';lookupBarcode(decoded);},()=>{});}
+    catch{scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';foodSearchResults.innerHTML='<p class="muted small">Camera access wasn’t available. Allow camera access in your browser settings or enter the barcode number.</p>';}
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
   $('toggleMacroDetails').addEventListener('click',()=>{const el=$('macroDetails');const hidden=el.classList.toggle('hidden');$('toggleMacroDetails').textContent=hidden?'Show carbs & fat ▾':'Hide carbs & fat ▴'});
