@@ -15,7 +15,7 @@
     if (format === 'ean_13' && code.length === 13 || format === 'upc_a' && code.length === 12 || format === 'ean_8' && code.length === 8) {
       const digits = code.split('').map(Number);
       const check = digits.pop();
-      const sum = digits.reduce((total, digit, index) => total + digit * ((digits.length - index) % 2 === (code.length % 2) ? 3 : 1), 0);
+      const sum = digits.reduce((total, digit, index) => total + digit * ((digits.length - index) % 2 === 1 ? 3 : 1), 0);
       return (10 - (sum % 10)) % 10 === check;
     }
     return false;
