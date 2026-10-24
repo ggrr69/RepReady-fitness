@@ -174,40 +174,33 @@
   $('scanBarcodeBtn').addEventListener('click',async()=>{
     const reader=$('barcodeReader');
     if(scanner){
-      try{scanner.reset();}catch{}
+      try{await scanner.stop();}catch{}
       scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
-      foodSearchResults.innerHTML='<p class="muted small">Scanner stopped.</p>';
       return;
     }
-    if(!window.ZXingBrowser||!window.ZXingBrowser.BrowserMultiFormatReader){
-      scannerNotice('Barcode reader could not load. Enter the barcode number manually.');
+    if(!window.Html5Qrcode){
+      scannerNotice('Camera scanner library did not load. Please refresh this page or enter the barcode manually.');
       return;
     }
     reader.classList.remove('hidden');
-    scannerNotice('Starting barcode scanner…');
+    scannerNotice('Starting camera…');
     $('scanBarcodeBtn').textContent='Stop scan';
-    try {
-      const hints = new Map();
-      const formats = window.ZXingBrowser.BarcodeFormat;
-      hints.set(window.ZXingBrowser.DecodeHintType.POSSIBLE_FORMATS,[
-        formats.EAN_13,formats.EAN_8,formats.UPC_A,formats.UPC_E,formats.CODE_128,formats.CODE_39,formats.ITF
-      ]);
-      scanner = new window.ZXingBrowser.BrowserMultiFormatReader(hints,350);
-      await scanner.decodeFromConstraints({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}},reader,async(result,err)=>{
-        if(!result)return;
-        const code=String(result.getText()||'').replace(/\D/g,'');
+    try{
+      scanner=new Html5Qrcode('barcodeReader',{verbose:false,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF]});
+      await scanner.start({facingMode:'environment'},{fps:15,qrbox:(w,h)=>({width:Math.floor(Math.min(w*.9,360)),height:Math.floor(Math.min(h*.4,160))}),aspectRatio:1.777,disableFlip:false},async(decoded)=>{
+        const code=String(decoded).replace(/\D/g,'');
         if(code.length<8||code.length>14)return;
         $('barcodeInput').value=code;
         scannerNotice('Barcode detected — looking up product…');
-        try{scanner.reset();}catch{}
+        try{await scanner.stop();}catch{}
         scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
         lookupBarcode(code);
-      });
-      scannerNotice('Camera is running — hold the barcode steady in the camera view.');
-    } catch(err) {
-      try{if(scanner)scanner.reset();}catch{}
+      },()=>{scannerNotice('Camera is running — center the barcode in the box and hold steady.');});
+      scannerNotice('Camera is running — center the barcode in the box and hold steady.');
+    }catch(err){
+      try{if(scanner)await scanner.stop();}catch{}
       scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';
-      scannerNotice('Scanner could not start: '+(err?.message||String(err))+'. Enter the barcode number manually.');
+      scannerNotice('Scanner could not start: '+(err?.message||String(err))+'. Enter the barcode manually.');
     }
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
