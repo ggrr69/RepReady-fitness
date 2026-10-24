@@ -73,3 +73,20 @@ dialog::backdrop{background:#102d26a8}
 .habit-item.done strong{text-decoration:line-through;color:#68776e}
 @media(min-width:600px){.today-grid,.progress-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.today-grid .workout-today{grid-row:span 2}.macro-overview{grid-template-columns:1fr 1fr}.detail-toggle,.macro-details{grid-column:1/-1}.progress-grid .well-card:last-child{grid-column:span 2}}
 @media(max-width:390px){.app-shell{padding-left:12px;padding-right:12px}.main-tabs{gap:2px;padding:4px}.tab{font-size:11px;padding:10px 2px}.topbar h1{font-size:19px}}
+
+
+/* Accessibility pass: strengthen text contrast for readability */
+:root{--muted:#526258;--line:#d5d8ce}
+.hero h2,.hero h3{color:#fff8ee}
+.hero p{color:#f0f4ef}
+.hero .pill{color:#fff0e4;background:#244d40;border-color:#729484}
+.eyebrow{color:#526258}
+.tab{color:#4e5e54}
+.tab.active{color:#fff8ee}
+.muted,.program-card p,.exercise-meta,.card-bottom,.food-copy small,.habit-copy p{color:#526258}
+.tag{color:#3f5147;background:#eee8dd}
+.macro-number small{color:#526258}
+.macro-details{color:#526258}
+footer{color:#526258}
+.brand-footer{color:#173f35}
+.gentle-note{color:#29483c}
