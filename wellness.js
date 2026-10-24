@@ -10,6 +10,21 @@
   well.foods = Array.isArray(well.foods) ? well.foods : [];
   const saveWell = () => { try { localStorage.setItem(WELL_KEY, JSON.stringify(well)); } catch {} };
   let scanner = null;
+  function scannerNotice(message) {
+    let el = document.getElementById('scannerNotice');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'scannerNotice';
+      el.className = 'scanner-notice';
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('visible');
+  }
+  function hideScannerNotice() {
+    const el = document.getElementById('scannerNotice');
+    if (el) el.classList.remove('visible');
+  }
   const foodSearchResults = $('foodSearchResults');
   const number = (v) => Number.isFinite(Number(v)) ? Math.max(0, Number(v)) : 0;
   function showFoodResults(items, source) {
@@ -158,29 +173,29 @@
   $('barcodeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupBarcode($('barcodeInput').value.trim())}});
   $('scanBarcodeBtn').addEventListener('click',async()=>{
     const reader=$('barcodeReader');
-    if(scanner){try{await scanner.stop();}catch{} scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';foodSearchResults.innerHTML='<p class="muted small">Scanner stopped.</p>';return;}
+    if(scanner){try{await scanner.stop();}catch{} scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();foodSearchResults.innerHTML='<p class="muted small">Scanner stopped.</p>';return;}
     if(!window.Html5Qrcode){foodSearchResults.innerHTML='<p class="muted small">Camera scanner could not load. Enter the barcode number instead.</p>';return;}
     reader.classList.remove('hidden');
-    foodSearchResults.innerHTML='<p id="scannerStatus" class="scanner-status">Starting camera…</p>';
+    scannerNotice('Starting camera…');
     $('scanBarcodeBtn').textContent='Stop scan';
     try {
       scanner=new Html5Qrcode('barcodeReader',{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.CODABAR]});
       await scanner.start({facingMode:'environment'},{fps:12,qrbox:{width:260,height:110},aspectRatio:1.777,disableFlip:false},async(decoded)=>{
         const code=String(decoded).replace(/\D/g,'');
         $('barcodeInput').value=code;
+        scannerNotice('Barcode detected — looking up product…');
         foodSearchResults.innerHTML='<p class="muted small">Barcode detected: '+safe(code)+'. Looking up product…</p>';
         try{await scanner.stop();}catch{}
-        scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';
+        scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
         lookupBarcode(code);
       },()=>{
-        const status=$('scannerStatus');
-        if(status)status.textContent='Camera is running — center the barcode in the box and hold steady.';
+        scannerNotice('Camera is running — center the barcode in the box and hold steady.');
       });
-      const status=$('scannerStatus');
-      if(status)status.textContent='Camera is running — center the barcode in the box and hold steady.';
+      scannerNotice('Camera is running — center the barcode in the box and hold steady.');
     } catch(err) {
       scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';
-      foodSearchResults.innerHTML='<p class="muted small">Scanner could not start: '+safe(err?.message||String(err))+'. You can enter the barcode number manually.</p>';
+      scannerNotice('Scanner could not start: '+(err?.message||String(err)));
+      foodSearchResults.innerHTML='<p class="muted small">Scanner could not start. You can enter the barcode number manually.</p>';
     }
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
