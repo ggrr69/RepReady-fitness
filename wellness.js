@@ -38,13 +38,32 @@
   }
   async function searchFoods(query) {
     if(!query.trim())return;
-    foodSearchResults.innerHTML='<p class="muted small">Searching foods…</p>';
+    foodSearchResults.innerHTML='<p class="muted small">Searching everyday foods and packaged products…</p>';
+    let everyday=[];
     try {
-      const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(query)+'&search_simple=1&action=process&json=1&page_size=12&fields=product_name,nutriments,serving_size';
-      const data=await (await fetch(url)).json();
-      const items=(data.products||[]).filter(p=>p.product_name&&p.nutriments).map(p=>fromOFF(p));
-      showFoodResults(items,'search');
-    } catch { foodSearchResults.innerHTML='<p class="muted small">Search is temporarily unavailable. You can still enter food manually.</p>'; }
+      const url='https://api.nal.usda.gov/fdc/v1/foods/search?query='+encodeURIComponent(query)+'&pageSize=10&api_key=DEMO_KEY';
+      const response=await fetch(url);
+      if(response.ok){
+        const data=await response.json();
+        everyday=(data.foods||[]).map(f=>{
+          const ns=f.foodNutrients||[];
+          const nutrient=id=>{const n=ns.find(x=>x.nutrientId===id);return number(n?.value);};
+          return {name:f.description||f.lowercaseDescription||'Food',cal:nutrient(1008),protein:nutrient(1003),carbs:nutrient(1005),fat:nutrient(1004),serving:'per 100 g',source:'USDA'};
+        }).filter(f=>f.name&&f.cal>0);
+      }
+    } catch {}
+    let packaged=[];
+    try {
+      const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(query)+'&search_simple=1&action=process&json=1&page_size=8&fields=product_name,nutriments,serving_size';
+      const response=await fetch(url);
+      if(response.ok){
+        const data=await response.json();
+        packaged=(data.products||[]).filter(p=>p.product_name&&p.nutriments).map(p=>fromOFF(p));
+      }
+    } catch {}
+    const combined=[...everyday,...packaged].filter((f,i,a)=>a.findIndex(x=>x.name.toLowerCase()===f.name.toLowerCase())===i).slice(0,15);
+    if(combined.length){showFoodResults(combined,'search');return;}
+    foodSearchResults.innerHTML='<p class="muted small">No matching foods found in either database. Try a different search or enter the nutrition label manually.</p>';
   }
   const safe = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const totals = () => well.foods.reduce((a,f) => ({cal:a.cal+f.cal, protein:a.protein+f.protein, carbs:a.carbs+(f.carbs||0), fat:a.fat+(f.fat||0)}),{cal:0,protein:0,carbs:0,fat:0});
