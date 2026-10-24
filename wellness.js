@@ -42,13 +42,21 @@
     foodSearchResults.innerHTML = items.map((f,i)=>'<button type="button" class="food-result" data-food-result="'+i+'"><strong>'+safe(f.name)+'</strong><small>'+Math.round(f.cal)+' cal · '+Math.round(f.protein)+' g protein · '+Math.round(f.carbs)+' g carbs · '+Math.round(f.fat)+' g fat'+(f.serving?' · '+safe(f.serving):'')+'</small></button>').join('');
     foodSearchResults.querySelectorAll('[data-food-result]').forEach(b=>b.addEventListener('click',()=> {
       const f=items[Number(b.dataset.foodResult)];
-      $('foodName').value=f.name; $('foodCalories').value=Number(f.cal.toFixed(1)); $('foodProtein').value=Number(f.protein.toFixed(1)); $('foodCarbs').value=Number(f.carbs.toFixed(1)); $('foodFat').value=Number(f.fat.toFixed(1)); setSuggestedPortions(f.name); $('foodPortion').value='100'; $('foodServingGrams').value=100; $('customGramsWrap').classList.add('hidden');
+      $('foodName').value=f.name; $('foodCalories').value=Number(f.cal.toFixed(1)); $('foodProtein').value=Number(f.protein.toFixed(1)); $('foodCarbs').value=Number(f.carbs.toFixed(1)); $('foodFat').value=Number(f.fat.toFixed(1)); setSuggestedPortions(f.name);
+      const defaultGrams=Number(f.defaultPortionGrams)>0?Number(f.defaultPortionGrams):100;
+      if(defaultGrams!==100){
+        const option=document.createElement('option');option.value=String(defaultGrams);option.textContent=(f.servingLabel||('Package serving ('+defaultGrams+' g)'));$('foodPortion').insertBefore(option,$('foodPortion').lastElementChild);
+      }
+      $('foodPortion').value=String(defaultGrams); $('foodServingGrams').value=defaultGrams; $('customGramsWrap').classList.add('hidden');
       $('foodForm').scrollIntoView({behavior:'smooth',block:'start'});
     }));
   }
   function fromOFF(p) {
     const n=p.nutriments||{};
-    return {name:p.product_name||p.product_name_en||'Packaged food',cal:number(n['energy-kcal_100g']??n['energy-kcal']),protein:number(n.proteins_100g),carbs:number(n.carbohydrates_100g),fat:number(n.fat_100g),serving:'per 100 g'};
+    const servingText=String(p.serving_size||'').trim();
+    const gramsMatch=servingText.match(/(?:^|[ (])([0-9]+(?:[.,][0-9]+)?)\\s*g\\b/i);
+    const servingGrams=gramsMatch?Number(gramsMatch[1].replace(',','.')):0;
+    return {name:p.product_name||p.product_name_en||'Packaged food',cal:number(n['energy-kcal_100g']??n['energy-kcal_100g']),protein:number(n.proteins_100g),carbs:number(n.carbohydrates_100g),fat:number(n.fat_100g),serving:servingText?(servingText+'; nutrition per 100 g'):'per 100 g',defaultPortionGrams:servingGrams,servingLabel:servingGrams?(servingText+' ('+servingGrams+' g)'):''};
   }
   async function lookupBarcode(code) {
     if(!/^\d{8,14}$/.test(code)){foodSearchResults.innerHTML='<p class="muted small">Enter a valid barcode number.</p>';return;}
