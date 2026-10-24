@@ -100,3 +100,15 @@ footer{color:#526258}
 #programDialog .muted{color:#405349}
 #programDialog .eyebrow{color:#526258}
 #programDialog .dialog-head .icon-button{background:#f1e9dd;color:#173f35;border-color:#d5d8ce}
+
+
+/* Strong contrast fix for program preview exercise lists */
+#programDialog .preview-day ul,
+#programDialog .preview-day li,
+#programDialog .preview-day li::marker,
+.preview-day ul,
+.preview-day li{color:#33483d!important;opacity:1!important}
+#programDialog .preview-day h3{color:#173f35!important}
+#programDialog .preview-day{background:#fffdf8!important;color:#173f35!important}
+#programDialog .preview-day li{font-weight:500}
+#programDialog .muted{color:#405349!important}
