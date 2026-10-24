@@ -161,8 +161,8 @@
     if(scanner){try{await scanner.stop();}catch{} scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';return;}
     if(!window.Html5Qrcode){foodSearchResults.innerHTML='<p class="muted small">Camera scanner could not load. Enter the barcode number instead.</p>';return;}
     reader.classList.remove('hidden'); $('scanBarcodeBtn').textContent='Stop scan';
-    scanner=new Html5Qrcode('barcodeReader');
-    try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:140}},async(decoded)=>{$('barcodeInput').value=decoded;try{await scanner.stop();}catch{}scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';lookupBarcode(decoded);},()=>{});}
+    scanner=new Html5Qrcode('barcodeReader',{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.CODABAR]});
+    try{await scanner.start({facingMode:'environment'},{fps:15,qrbox:{width:300,height:100},aspectRatio:2.5},async(decoded)=>{$('barcodeInput').value=decoded;try{await scanner.stop();}catch{}scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';lookupBarcode(decoded);},()=>{});}
     catch{scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';foodSearchResults.innerHTML='<p class="muted small">Camera access wasn’t available. Allow camera access in your browser settings or enter the barcode number.</p>';}
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
