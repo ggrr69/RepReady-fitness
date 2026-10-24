@@ -10,6 +10,16 @@
   well.foods = Array.isArray(well.foods) ? well.foods : [];
   const saveWell = () => { try { localStorage.setItem(WELL_KEY, JSON.stringify(well)); } catch {} };
   let scanner = null;
+  function validRetailBarcode(code, format) {
+    if (!/^\d+$/.test(code)) return false;
+    if (format === 'ean_13' && code.length === 13 || format === 'upc_a' && code.length === 12 || format === 'ean_8' && code.length === 8) {
+      const digits = code.split('').map(Number);
+      const check = digits.pop();
+      const sum = digits.reduce((total, digit, index) => total + digit * ((digits.length - index) % 2 === (code.length % 2) ? 3 : 1), 0);
+      return (10 - (sum % 10)) % 10 === check;
+    }
+    return false;
+  }
   function scannerNotice(message) {
     let el = document.getElementById('scannerNotice');
     if (!el) {
@@ -174,49 +184,45 @@
   $('scanBarcodeBtn').addEventListener('click',async()=>{
     const reader=$('barcodeReader');
     if(scanner){
-      try{Quagga.offDetected(onQuaggaDetected);Quagga.stop();}catch{}
+      try{Quagga.offDetected(window.onQuaggaDetected);Quagga.stop();}catch{}
       scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
       return;
     }
-    if(!window.Quagga){
-      scannerNotice('Barcode decoder did not load. Please refresh and try again.');
-      return;
-    }
-    reader.classList.remove('hidden');
-    reader.innerHTML='';
-    scannerNotice('Starting barcode scanner…');
-    $('scanBarcodeBtn').textContent='Stop scan';
-    let accepted=false;
-    window.onQuaggaDetected = async (result) => {
+    if(!window.Quagga){scannerNotice('Barcode decoder did not load. Refresh and try again.');return;}
+    reader.classList.remove('hidden');reader.innerHTML='';
+    scannerNotice('Starting barcode scanner…');$('scanBarcodeBtn').textContent='Stop scan';
+    let lastCode='',sameCount=0,accepted=false;
+    window.onQuaggaDetected=(result)=>{
       if(accepted)return;
       const raw=result?.codeResult?.code||'';
       const format=result?.codeResult?.format||'';
       const code=String(raw).replace(/\D/g,'');
-      if(code.length<8||code.length>14)return;
-      if(!['ean_13','ean_8','upc_a','upc_e'].includes(format))return;
+      if(!['ean_13','ean_8','upc_a'].includes(format)||!validRetailBarcode(code,format)){
+        lastCode='';sameCount=0;
+        scannerNotice('Barcode visible — adjusting focus. Hold steady over the product barcode.');
+        return;
+      }
+      if(code===lastCode)sameCount++;else{lastCode=code;sameCount=1;}
+      scannerNotice('Reading barcode… '+sameCount+'/3');
+      if(sameCount<3)return;
       accepted=true;
       $('barcodeInput').value=code;
-      scannerNotice('Barcode detected — looking up product…');
+      scannerNotice('Confirmed barcode '+code+' — looking up product…');
       try{Quagga.offDetected(window.onQuaggaDetected);Quagga.stop();}catch{}
-      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
+      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';
       lookupBarcode(code);
     };
     scanner={active:true};
     try{
       Quagga.init({
-        inputStream:{name:'Goodstride camera',type:'LiveStream',target:reader,constraints:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},area:{top:'5%',right:'5%',left:'5%',bottom:'5%'}},
-        locator:{patchSize:'medium',halfSample:false},
-        decoder:{readers:['ean_reader','ean_8_reader','upc_reader','upc_e_reader']},
+        inputStream:{name:'Goodstride camera',type:'LiveStream',target:reader,constraints:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},area:{top:'0%',right:'0%',left:'0%',bottom:'0%'}},
+        locator:{patchSize:'large',halfSample:false},
+        decoder:{readers:['ean_reader','ean_8_reader','upc_reader']},
         locate:true,numOfWorkers:0
       },(err)=>{
-        if(err){
-          scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';
-          scannerNotice('Barcode scanner could not start: '+(err.message||String(err)));
-          return;
-        }
-        Quagga.onDetected(window.onQuaggaDetected);
-        Quagga.start();
-        scannerNotice('Camera is running — hold the barcode inside the camera view.');
+        if(err){scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';scannerNotice('Barcode scanner could not start: '+(err.message||String(err)));return;}
+        Quagga.onDetected(window.onQuaggaDetected);Quagga.start();
+        scannerNotice('Camera is running — center the product barcode and hold steady.');
       });
     }catch(err){
       scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';
