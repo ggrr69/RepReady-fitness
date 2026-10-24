@@ -187,7 +187,7 @@
     $('scanBarcodeBtn').textContent='Stop scan';
     try{
       scanner=new Html5Qrcode('barcodeReader',{verbose:false,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF]});
-      await scanner.start({facingMode:'environment'},{fps:12,aspectRatio:1.777,disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true}},async(decoded)=>{
+      await scanner.start({facingMode:'environment'},{fps:20,aspectRatio:1.777,disableFlip:false},async(decoded)=>{
         const code=String(decoded).replace(/\D/g,'');
         if(code.length<8||code.length>14)return;
         $('barcodeInput').value=code;
