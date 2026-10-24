@@ -110,20 +110,28 @@
   window.setTab = showView;
   document.querySelectorAll('.main-tabs .tab').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
   document.querySelectorAll('[data-well-goto]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.wellGoto)));
-  $('foodForm').addEventListener('submit',e=>{
-    e.preventDefault();
+  function addFoodFromForm() {
     const name=$('foodName').value.trim();
-    const baseCal=Number($('foodCalories').value);
-    const baseProtein=Number($('foodProtein').value);
-    const baseCarbs=Number($('foodCarbs').value||0);
-    const baseFat=Number($('foodFat').value||0);
-    const grams=Number($('foodServingGrams').value);
-    if(!name || ![baseCal,baseProtein,baseCarbs,baseFat,grams].every(Number.isFinite) || [baseCal,baseProtein,baseCarbs,baseFat].some(v=>v<0) || grams<=0)return;
+    const baseCal=$('foodCalories').value.trim()===''?NaN:Number($('foodCalories').value);
+    const baseProtein=$('foodProtein').value.trim()===''?NaN:Number($('foodProtein').value);
+    const baseCarbs=$('foodCarbs').value.trim()===''?0:Number($('foodCarbs').value);
+    const baseFat=$('foodFat').value.trim()===''?0:Number($('foodFat').value);
+    const grams=$('foodServingGrams').value.trim()===''?NaN:Number($('foodServingGrams').value);
+    const missing=[];
+    if(!name)missing.push('food name');
+    if(!Number.isFinite(baseCal)||baseCal<0)missing.push('calories');
+    if(!Number.isFinite(baseProtein)||baseProtein<0)missing.push('protein');
+    if(!Number.isFinite(grams)||grams<=0)missing.push('serving size');
+    if(missing.length){$('foodFormMessage').textContent='Please check: '+missing.join(', ')+'. Select a search result again if the fields did not fill in.';return;}
     const factor=grams/100;
     const cal=Math.round(baseCal*factor), protein=Number((baseProtein*factor).toFixed(1)), carbs=Number((baseCarbs*factor).toFixed(1)), fat=Number((baseFat*factor).toFixed(1));
     well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name+' ('+grams+' g)',cal,protein,carbs,fat,grams});
-    saveWell(); e.target.reset(); renderFood(); updateDashboard();
-  });
+    saveWell(); $('foodForm').reset(); $('foodServingGrams').value=100; $('foodCarbs').value=0; $('foodFat').value=0;
+    $('foodFormMessage').textContent='Added '+name+' — '+cal+' calories.';
+    renderFood(); updateDashboard();
+  }
+  $('foodForm').addEventListener('submit',e=>{e.preventDefault();addFoodFromForm()});
+  $('addFoodBtn').addEventListener('click',addFoodFromForm);
   $('searchFoodBtn').addEventListener('click',()=>searchFoods($('foodSearch').value));
   $('foodSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchFoods($('foodSearch').value)}});
   $('lookupBarcodeBtn').addEventListener('click',()=>lookupBarcode($('barcodeInput').value.trim()));
