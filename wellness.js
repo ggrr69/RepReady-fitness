@@ -173,29 +173,41 @@
   $('barcodeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupBarcode($('barcodeInput').value.trim())}});
   $('scanBarcodeBtn').addEventListener('click',async()=>{
     const reader=$('barcodeReader');
-    if(scanner){try{await scanner.stop();}catch{} scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();foodSearchResults.innerHTML='<p class="muted small">Scanner stopped.</p>';return;}
-    if(!window.Html5Qrcode){foodSearchResults.innerHTML='<p class="muted small">Camera scanner could not load. Enter the barcode number instead.</p>';return;}
+    if(scanner){
+      try{scanner.reset();}catch{}
+      scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
+      foodSearchResults.innerHTML='<p class="muted small">Scanner stopped.</p>';
+      return;
+    }
+    if(!window.ZXingBrowser||!window.ZXingBrowser.BrowserMultiFormatReader){
+      scannerNotice('Barcode reader could not load. Enter the barcode number manually.');
+      return;
+    }
     reader.classList.remove('hidden');
-    scannerNotice('Starting camera…');
+    scannerNotice('Starting barcode scanner…');
     $('scanBarcodeBtn').textContent='Stop scan';
     try {
-      scanner=new Html5Qrcode('barcodeReader',{verbose:true,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.CODABAR]});
-      await scanner.start({facingMode:'environment'},{fps:20,qrbox:(viewfinderWidth,viewfinderHeight)=>({width:Math.floor(viewfinderWidth*0.88),height:Math.floor(viewfinderHeight*0.38)}),aspectRatio:1.777,disableFlip:false,videoConstraints:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}},async(decoded)=>{
-        const code=String(decoded).replace(/\D/g,'');
+      const hints = new Map();
+      const formats = window.ZXingBrowser.BarcodeFormat;
+      hints.set(window.ZXingBrowser.DecodeHintType.POSSIBLE_FORMATS,[
+        formats.EAN_13,formats.EAN_8,formats.UPC_A,formats.UPC_E,formats.CODE_128,formats.CODE_39,formats.ITF
+      ]);
+      scanner = new window.ZXingBrowser.BrowserMultiFormatReader(hints,350);
+      await scanner.decodeFromConstraints({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}},reader,async(result,err)=>{
+        if(!result)return;
+        const code=String(result.getText()||'').replace(/\D/g,'');
+        if(code.length<8||code.length>14)return;
         $('barcodeInput').value=code;
         scannerNotice('Barcode detected — looking up product…');
-        foodSearchResults.innerHTML='<p class="muted small">Barcode detected: '+safe(code)+'. Looking up product…</p>';
-        try{await scanner.stop();}catch{}
+        try{scanner.reset();}catch{}
         scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
         lookupBarcode(code);
-      },()=>{
-        scannerNotice('Camera is running — center the barcode in the box and hold steady.');
       });
-      scannerNotice('Camera is running — center the barcode in the box and hold steady.');
+      scannerNotice('Camera is running — hold the barcode steady in the camera view.');
     } catch(err) {
+      try{if(scanner)scanner.reset();}catch{}
       scanner=null;reader.classList.add('hidden');$('scanBarcodeBtn').textContent='Scan';
-      scannerNotice('Scanner could not start: '+(err?.message||String(err)));
-      foodSearchResults.innerHTML='<p class="muted small">Scanner could not start. You can enter the barcode number manually.</p>';
+      scannerNotice('Scanner could not start: '+(err?.message||String(err))+'. Enter the barcode number manually.');
     }
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
