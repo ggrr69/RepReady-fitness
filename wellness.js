@@ -56,7 +56,7 @@
     const servingText=String(p.serving_size||'').trim();
     const gramsMatch=servingText.match(/(?:^|[ (])([0-9]+(?:[.,][0-9]+)?)\\s*g\\b/i);
     const servingGrams=gramsMatch?Number(gramsMatch[1].replace(',','.')):0;
-    return {name:p.product_name||p.product_name_en||'Packaged food',cal:number(n['energy-kcal_100g']??n['energy-kcal_100g']),protein:number(n.proteins_100g),carbs:number(n.carbohydrates_100g),fat:number(n.fat_100g),serving:servingText?(servingText+'; nutrition per 100 g'):'per 100 g',defaultPortionGrams:servingGrams,servingLabel:servingGrams?(servingText+' ('+servingGrams+' g)'):''};
+    return {name:p.product_name||p.product_name_en||'Packaged food',cal:number(n['energy-kcal_100g']??n['energy-kcal']),protein:number(n.proteins_100g),carbs:number(n.carbohydrates_100g),fat:number(n.fat_100g),serving:servingText?(servingText+'; nutrition per 100 g'):'per 100 g',defaultPortionGrams:servingGrams,servingLabel:servingGrams?(servingText+' ('+servingGrams+' g)'):''};
   }
   async function lookupBarcode(code) {
     if(!/^\d{8,14}$/.test(code)){foodSearchResults.innerHTML='<p class="muted small">Enter a valid barcode number.</p>';return;}
