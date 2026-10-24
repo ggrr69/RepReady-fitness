@@ -112,8 +112,12 @@
   document.querySelectorAll('[data-well-goto]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.wellGoto)));
   $('foodForm').addEventListener('submit',e=>{
     e.preventDefault();
-    const name=$('foodName').value.trim(), cal=Number($('foodCalories').value), protein=Number($('foodProtein').value);
-    if(!name || !Number.isFinite(cal) || !Number.isFinite(protein) || cal<0 || protein<0)return;
+    const name=$('foodName').value.trim();
+    const cal=Number($('foodCalories').value);
+    const protein=Number($('foodProtein').value);
+    const carbs=Number($('foodCarbs').value||0);
+    const fat=Number($('foodFat').value||0);
+    if(!name || ![cal,protein,carbs,fat].every(Number.isFinite) || [cal,protein,carbs,fat].some(v=>v<0))return;
     well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,cal,protein,carbs,fat});
     saveWell(); e.target.reset(); renderFood(); updateDashboard();
   });
