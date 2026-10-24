@@ -90,3 +90,13 @@ dialog::backdrop{background:#102d26a8}
 footer{color:#526258}
 .brand-footer{color:#173f35}
 .gentle-note{color:#29483c}
+
+
+/* Workout program preview: improve text contrast on light cards */
+.preview-day{background:#fffdf8;border-color:#d5d8ce;color:#173f35}
+.preview-day h3{color:#173f35}
+.preview-day ul,.preview-day li{color:#405349}
+#programDialog{background:#fffdf8;color:#173f35;border-color:#d5d8ce}
+#programDialog .muted{color:#405349}
+#programDialog .eyebrow{color:#526258}
+#programDialog .dialog-head .icon-button{background:#f1e9dd;color:#173f35;border-color:#d5d8ce}
