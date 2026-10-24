@@ -161,12 +161,13 @@
     const baseProtein=$('foodProtein').value.trim()===''?NaN:Number($('foodProtein').value);
     const baseCarbs=$('foodCarbs').value.trim()===''?0:Number($('foodCarbs').value);
     const baseFat=$('foodFat').value.trim()===''?0:Number($('foodFat').value);
-    const grams=$('foodPortion').value==='custom' ? ($('foodServingGrams').value.trim()===''?NaN:Number($('foodServingGrams').value)) : Number($('foodPortion').value);
+    const selectedGrams=$('foodPortion').value==='custom' ? ($('foodServingGrams').value.trim()===''?NaN:Number($('foodServingGrams').value)) : Number($('foodPortion').value);
+    const grams=Number.isFinite(selectedGrams)&&selectedGrams>0?selectedGrams:100;
     const missing=[];
     if(!name)missing.push('food name');
     if(!Number.isFinite(baseCal)||baseCal<0)missing.push('calories');
     if(!Number.isFinite(baseProtein)||baseProtein<0)missing.push('protein');
-    if(!Number.isFinite(grams)||grams<=0)missing.push('serving size');
+    
     if(missing.length){$('foodFormMessage').textContent='Please check: '+missing.join(', ')+'. Select a search result again if the fields did not fill in.';return;}
     const factor=grams/100;
     const cal=Math.round(baseCal*factor), protein=Number((baseProtein*factor).toFixed(1)), carbs=Number((baseCarbs*factor).toFixed(1)), fat=Number((baseFat*factor).toFixed(1));
