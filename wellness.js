@@ -17,7 +17,7 @@
     foodSearchResults.innerHTML = items.map((f,i)=>'<button type="button" class="food-result" data-food-result="'+i+'"><strong>'+safe(f.name)+'</strong><small>'+Math.round(f.cal)+' cal · '+Math.round(f.protein)+' g protein · '+Math.round(f.carbs)+' g carbs · '+Math.round(f.fat)+' g fat'+(f.serving?' · '+safe(f.serving):'')+'</small></button>').join('');
     foodSearchResults.querySelectorAll('[data-food-result]').forEach(b=>b.addEventListener('click',()=> {
       const f=items[Number(b.dataset.foodResult)];
-      $('foodName').value=f.name; $('foodCalories').value=Number(f.cal.toFixed(1)); $('foodProtein').value=Number(f.protein.toFixed(1)); $('foodCarbs').value=Number(f.carbs.toFixed(1)); $('foodFat').value=Number(f.fat.toFixed(1)); $('foodServingGrams').value=100;
+      $('foodName').value=f.name; $('foodCalories').value=Number(f.cal.toFixed(1)); $('foodProtein').value=Number(f.protein.toFixed(1)); $('foodCarbs').value=Number(f.carbs.toFixed(1)); $('foodFat').value=Number(f.fat.toFixed(1)); setSuggestedPortions(f.name); $('foodPortion').value='100'; $('foodServingGrams').value=100; $('customGramsWrap').classList.add('hidden');
       $('foodForm').scrollIntoView({behavior:'smooth',block:'start'});
     }));
   }
@@ -110,13 +110,33 @@
   window.setTab = showView;
   document.querySelectorAll('.main-tabs .tab').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
   document.querySelectorAll('[data-well-goto]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.wellGoto)));
+  const portionPresets = {
+    banana:[['1 small banana',101],['1 medium banana',118],['1 large banana',136]],
+    egg:[['1 large egg',50],['2 large eggs',100],['3 large eggs',150]],
+    rice:[['½ cup cooked',79],['1 cup cooked',158],['1½ cups cooked',237]],
+    chicken:[['3 oz cooked',85],['4 oz cooked',113],['6 oz cooked',170]],
+    yogurt:[['½ cup',122],['1 cup',245]],
+    oatmeal:[['½ cup cooked',117],['1 cup cooked',234]],
+    apple:[['1 small apple',149],['1 medium apple',182],['1 large apple',223]]
+  };
+  function setSuggestedPortions(name) {
+    const lower=name.toLowerCase();
+    let key=Object.keys(portionPresets).find(k=>lower.includes(k));
+    let options=key?portionPresets[key]:[['½ serving',50],['100 g (standard)',100],['1 cup (approx.)',150],['1 oz',28.35],['3 oz',85],['4 oz',113],['6 oz',170]];
+    $('foodPortion').innerHTML=options.map(o=>'<option value="'+o[1]+'">'+o[0]+'</option>').join('')+'<option value="custom">Enter grams…</option>';
+    $('portionHint').textContent=key?'Approximate portion weights; adjust if your portion differs.':'Choose a familiar portion or enter a custom weight.';
+  }
+  $('foodPortion').addEventListener('change',()=>{
+    const custom=$('foodPortion').value==='custom';
+    $('customGramsWrap').classList.toggle('hidden',!custom);
+  });
   function addFoodFromForm() {
     const name=$('foodName').value.trim();
     const baseCal=$('foodCalories').value.trim()===''?NaN:Number($('foodCalories').value);
     const baseProtein=$('foodProtein').value.trim()===''?NaN:Number($('foodProtein').value);
     const baseCarbs=$('foodCarbs').value.trim()===''?0:Number($('foodCarbs').value);
     const baseFat=$('foodFat').value.trim()===''?0:Number($('foodFat').value);
-    const grams=$('foodServingGrams').value.trim()===''?NaN:Number($('foodServingGrams').value);
+    const grams=$('foodPortion').value==='custom' ? ($('foodServingGrams').value.trim()===''?NaN:Number($('foodServingGrams').value)) : Number($('foodPortion').value);
     const missing=[];
     if(!name)missing.push('food name');
     if(!Number.isFinite(baseCal)||baseCal<0)missing.push('calories');
@@ -126,7 +146,7 @@
     const factor=grams/100;
     const cal=Math.round(baseCal*factor), protein=Number((baseProtein*factor).toFixed(1)), carbs=Number((baseCarbs*factor).toFixed(1)), fat=Number((baseFat*factor).toFixed(1));
     well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name+' ('+grams+' g)',cal,protein,carbs,fat,grams});
-    saveWell(); $('foodForm').reset(); $('foodServingGrams').value=100; $('foodCarbs').value=0; $('foodFat').value=0;
+    saveWell(); $('foodForm').reset(); $('foodPortion').innerHTML='<option value="100">100 g (standard)</option><option value="50">½ serving</option><option value="150">1 cup (approx.)</option><option value="28.35">1 oz</option><option value="85">3 oz</option><option value="113">4 oz</option><option value="170">6 oz</option><option value="custom">Enter grams…</option>'; $('customGramsWrap').classList.add('hidden'); $('foodServingGrams').value=100; $('foodCarbs').value=0; $('foodFat').value=0;
     $('foodFormMessage').textContent='Added '+name+' — '+cal+' calories.';
     renderFood(); updateDashboard();
   }
