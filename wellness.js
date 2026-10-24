@@ -179,8 +179,8 @@
     scannerNotice('Starting camera…');
     $('scanBarcodeBtn').textContent='Stop scan';
     try {
-      scanner=new Html5Qrcode('barcodeReader',{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.CODABAR]});
-      await scanner.start({facingMode:'environment'},{fps:12,qrbox:{width:260,height:110},aspectRatio:1.777,disableFlip:false},async(decoded)=>{
+      scanner=new Html5Qrcode('barcodeReader',{verbose:true,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.CODABAR]});
+      await scanner.start({facingMode:'environment'},{fps:20,qrbox:(viewfinderWidth,viewfinderHeight)=>({width:Math.floor(viewfinderWidth*0.88),height:Math.floor(viewfinderHeight*0.38)}),aspectRatio:1.777,disableFlip:false,videoConstraints:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}},async(decoded)=>{
         const code=String(decoded).replace(/\D/g,'');
         $('barcodeInput').value=code;
         scannerNotice('Barcode detected — looking up product…');
