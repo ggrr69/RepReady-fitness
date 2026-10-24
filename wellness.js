@@ -198,8 +198,7 @@
       const format=result?.codeResult?.format||'';
       const code=String(raw).replace(/\D/g,'');
       if(!['ean_13','ean_8','upc_a'].includes(format)||!validRetailBarcode(code,format)){
-        lastCode='';sameCount=0;
-        scannerNotice('Barcode visible — adjusting focus. Hold steady over the product barcode.');
+        // Ignore noisy/partial frames instead of resetting a good candidate.
         return;
       }
       if(code===lastCode)sameCount++;else{lastCode=code;sameCount=1;}
