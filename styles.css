@@ -117,3 +117,5 @@ footer{color:#526258}
 
 /* Barcode scanner: keep the camera preview centered and easy to reach on mobile */
 #barcodeReader:not(.hidden){position:fixed;z-index:1000;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,520px);max-height:72dvh;overflow:auto;background:#fffdf8;border:1px solid #d5d8ce;border-radius:18px;padding:12px;box-shadow:0 18px 70px #102d2670;margin:0}#barcodeReader video{display:block;width:100%!important;max-height:52dvh;object-fit:contain}#barcodeReader .scanner-close{display:block;width:100%;margin-top:10px;padding:11px;border:0;border-radius:10px;background:#173f35;color:#fff8ee;font:inherit;font-weight:750}
+
+.scanner-status{margin:0 0 10px;padding:8px 10px;background:#e2ebe4;border-radius:9px;color:#173f35;font-size:12px;font-weight:650;text-align:center}
