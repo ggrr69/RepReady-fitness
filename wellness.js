@@ -167,33 +167,11 @@
   let mobilityChecks = {};
   function openMobilityDemo(name,cue,instruction){
  const n=String(name||'').toLowerCase();
- let type='stand',label='Movement';
- if(n.includes('wall chest')){type='wall-chest';label='Forearm stays on wall; rotate away gently.'}
- else if(n.includes('shoulder circle')||n.includes('shoulder roll')){type='shoulder-circle';label='Roll shoulders in a slow circle.'}
- else if(n.includes('neck')){type='neck-turn';label='Turn head gently side to side.'}
- else if(n.includes('rotation')||n.includes('upper-back')||n.includes('twist')){type='torso-turn';label='Rotate upper body; keep hips steady.'}
- else if(n.includes('hinge')){type='hinge';label='Send hips backward; keep spine long.'}
- else if(n.includes('squat')||n.includes('sit-to-stand')){type='squat';label='Lower with control, then stand.'}
- else if(n.includes('calf raise')){type='calf-raise';label='Lift heels, then lower slowly.'}
- else if(n.includes('ankle')){type='ankle';label='Move ankle through a comfortable range.'}
- else if(n.includes('march')){type='march';label='Lift one knee at a time.'}
- else if(n.includes('side bend')||n.includes('reach')){type='reach';label='Reach gently upward and to the side.'}
- const art={
- 'wall-chest':'<path d="M91 15 V125" stroke="#b4c7b8" stroke-width="7" stroke-linecap="round"/><circle cx="49" cy="30" r="7"/><path d="M49 38 L49 72 L40 99 M49 48 L68 54 L86 54 M49 48 L34 57 L22 44 M49 72 L64 101" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 32 Q18 43 25 55" fill="none" stroke="#d88d67" stroke-width="2.5" stroke-linecap="round"/>',
- 'shoulder-circle':'<circle cx="60" cy="20" r="8"/><path d="M60 29 V72 M60 42 L35 48 L36 30 M60 42 L85 48 L84 30 M60 72 L44 112 M60 72 L76 112" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M23 34 A17 17 0 1 1 41 18 M37 13 L42 18 L35 21 M97 34 A17 17 0 1 0 79 18 M83 13 L78 18 L85 21" fill="none" stroke="#d88d67" stroke-width="2.5" stroke-linecap="round"/>',
- 'neck-turn':'<circle cx="60" cy="24" r="10"/><path d="M60 34 V78 M60 45 L36 58 M60 45 L84 58 M60 78 L44 115 M60 78 L76 115" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M38 18 Q25 24 38 31 M82 18 Q95 24 82 31" fill="none" stroke="#d88d67" stroke-width="2.5" stroke-linecap="round"/>',
- 'torso-turn':'<circle cx="60" cy="20" r="8"/><path d="M60 29 V74 M60 42 L35 52 L29 40 M60 42 L85 52 L91 40 M60 74 L44 113 M60 74 L76 113" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M34 32 Q18 48 33 62 M86 32 Q102 48 87 62" fill="none" stroke="#d88d67" stroke-width="2.5" stroke-linecap="round"/>',
- 'hinge':'<circle cx="67" cy="29" r="8"/><path d="M61 36 L44 55 L30 73 M49 50 L28 52 M49 50 L70 57 M30 73 L28 113 M30 73 L48 112" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 30 Q14 43 22 54" fill="none" stroke="#d88d67" stroke-width="2.5"/>',
- 'squat':'<circle cx="60" cy="20" r="8"/><path d="M60 29 V52 M60 37 L39 46 M60 37 L81 46 M60 52 L43 67 L45 103 M60 52 L77 67 L82 102" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M91 48 V67 M86 61 L91 67 L96 61" fill="none" stroke="#d88d67" stroke-width="2.5"/>',
- 'calf-raise':'<circle cx="60" cy="20" r="8"/><path d="M60 29 V72 M60 41 L40 53 M60 41 L80 53 M60 72 L48 107 L44 112 M60 72 L72 107 L76 112" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M31 105 V88 M26 94 L31 88 L36 94 M89 105 V88 M84 94 L89 88 L94 94" fill="none" stroke="#d88d67" stroke-width="2.5"/>',
- 'ankle':'<circle cx="48" cy="23" r="8"/><path d="M48 32 L48 70 L59 91 L78 91 M48 43 L30 55 M48 43 L66 55 M48 70 L39 108" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M72 77 A14 14 0 1 1 80 96" fill="none" stroke="#d88d67" stroke-width="2.5"/>',
- 'march':'<circle cx="60" cy="20" r="8"/><path d="M60 29 V69 M60 40 L39 52 M60 40 L81 52 M60 69 L44 108 M60 69 L77 79 L87 63" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M88 44 V57 M83 52 L88 57 L93 52" fill="none" stroke="#d88d67" stroke-width="2.5"/>',
- 'reach':'<circle cx="60" cy="24" r="8"/><path d="M60 33 V75 M60 42 L39 19 L35 8 M60 42 L79 48 M60 75 L45 113 M60 75 L76 113" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M22 18 Q24 6 36 5 M30 2 L36 5 L32 11" fill="none" stroke="#d88d67" stroke-width="2.5"/>',
- 'stand':'<circle cx="60" cy="20" r="8"/><path d="M60 29 V72 M60 42 L39 53 M60 42 L81 53 M60 72 L44 113 M60 72 L76 113" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>'
- };
- const steps=[ 'Set up: '+name+'.','Move slowly as shown; keep the range comfortable.','Return to the starting position and repeat gently.' ];
+ const searchUrl='https://www.youtube.com/results?search_query='+encodeURIComponent(name+' exercise demonstration physical therapist');
+ const isChest=n.includes('wall chest')||n.includes('chest opener');
+ const video=isChest?'<video class="real-demo-video" controls playsinline preload="metadata" poster=""><source src="https://mindbodypt.com/wp-content/uploads/2020/05/ChestOpener_480.mov" type="video/quicktime">Your browser cannot play this video.</video>':'<div class="real-demo-placeholder"><div class="real-demo-icon">▶</div><strong>Watch a real person demonstrate this movement</strong><p>Open a video search for this exact exercise to see the movement performed.</p><a class="primary full real-demo-link" href="'+searchUrl+'" target="_blank" rel="noopener">Find real-person demonstration</a></div>';
  $('movementTitle').textContent=name;
- $('movementDemoBody').innerHTML='<div class="movement-demo-stage"><div class="movement-demo-figure '+type+'"><svg viewBox="0 0 120 140" aria-hidden="true">'+art[type]+'</svg></div><p class="demo-cue">'+cue+'</p></div><p class="demo-cue">'+label+'</p><ol class="demo-steps">'+steps.map(x=>'<li>'+x+'</li>').join('')+'</ol><p class="muted small">'+instruction+'</p>';
+ $('movementDemoBody').innerHTML='<div class="real-demo-wrap">'+video+'</div><p class="demo-cue">'+cue+'</p><p class="muted small">'+instruction+'</p><p class="muted small">Choose a slow, controlled demonstration and stop if the movement causes pain.</p>';
  $('movementDialog').showModal();
 }
 function renderMobilityRoutine() {
