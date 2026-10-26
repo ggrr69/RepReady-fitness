@@ -237,3 +237,12 @@ footer{color:#526258}
 @keyframes gs-pulse{from{opacity:.45;transform:scale(.85)}to{opacity:1;transform:scale(1.15)}}
 @media(max-width:480px){.gs-instructor-stage{padding:12px 10px}.gs-instructor-art{height:205px;max-width:210px}.gs-stage-kicker{font-size:9px;letter-spacing:.1em}.gs-stage-caption strong{font-size:14px}.gs-stage-caption span{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.gs-avatar-motion,.gs-arm-left,.gs-arm-right,.gs-torso,.gs-head,.gs-lower,.gs-motion-dot{animation:none!important}}
+
+/* Original procedural 3D instructor stage */
+.gs3d-stage{position:relative;height:260px;width:100%;max-width:340px;margin:0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.gs3d-stage canvas{display:block;width:100%;height:260px;outline:none}
+.gs3d-loading{position:absolute;bottom:7px;left:0;right:0;text-align:center;font-size:11px;color:#68776e;pointer-events:none}
+.gs3d-stage canvas:not([data-ready]){background:transparent}
+.gs-instructor-stage .gs-stage-caption{position:relative;z-index:1;margin-top:4px;line-height:1.35}
+.gs-instructor-instructions{border-left:3px solid #d88d67;padding:8px 0 8px 12px;margin:12px 0;color:#173f35}
+@media(max-width:480px){.gs3d-stage{height:230px;max-width:300px}.gs3d-stage canvas{height:230px}.gs-instructor-stage{padding:12px 10px}}
