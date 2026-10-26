@@ -136,3 +136,17 @@ footer{color:#526258}
 .mobility-step-copy span{font-size:13px;color:var(--muted)}
 .mobility-step.done{background:#edf4ed;border-color:#b6cabb}
 .mobility-step.done .mobility-step-copy strong{text-decoration:line-through;opacity:.75}
+
+/* Goodstride movement illustrations */
+.exercise-card .exercise-main{align-items:center;gap:12px}
+.movement-visual{width:76px;min-width:76px;height:82px;border-radius:14px;background:#edf3ec;color:#173f35;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+.movement-visual svg{width:66px;height:62px;overflow:visible}
+.movement-visual span{font-size:10px;letter-spacing:.04em;text-transform:uppercase;font-weight:800;color:#48685a}
+.movement-visual .figure{transform-origin:center;animation:goodstride-breathe 3s ease-in-out infinite}
+.mobility-figure{width:70px;min-width:70px;height:82px;display:grid;place-items:center;border-radius:13px;background:#edf3ec;color:#173f35}
+.mobility-figure svg{width:64px;height:72px;overflow:visible}
+.motion-arrow{animation:goodstride-arrow 1.8s ease-in-out infinite;transform-origin:center}
+@keyframes goodstride-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes goodstride-arrow{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:1;transform:translateX(2px)}}
+@media(prefers-reduced-motion:reduce){.movement-visual .figure,.motion-arrow{animation:none!important}}
+@media(max-width:480px){.movement-visual{width:64px;min-width:64px;height:74px}.movement-visual svg{width:56px;height:54px}.mobility-figure{width:60px;min-width:60px;height:74px}.mobility-figure svg{width:56px;height:64px}}
