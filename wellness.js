@@ -167,10 +167,8 @@
   let mobilityChecks = {};
   function openMobilityDemo(name,cue,instruction){
  const n=String(name||'').toLowerCase();
- const searchUrl='https://www.youtube.com/results?search_query='+encodeURIComponent(name+' exercise demonstration physical therapist');
- const video='<div class="real-demo-placeholder"><div class="real-demo-icon">▶</div><strong>Watch a real person demonstrate this movement</strong><p>Open a video search for this exact exercise to see the movement performed.</p><a class="primary full real-demo-link" href="'+searchUrl+'" target="_blank" rel="noopener">Find real-person demonstration</a></div>';
  $('movementTitle').textContent=name;
- $('movementDemoBody').innerHTML='<div class="real-demo-wrap">'+video+'</div><p class="demo-cue">'+cue+'</p><p class="muted small">'+instruction+'</p><p class="muted small">Choose a slow, controlled demonstration and stop if the movement causes pain.</p>';
+ $('movementDemoBody').innerHTML=window.goodstrideInstructorPreview?window.goodstrideInstructorPreview(name,cue)+'<p class="muted small">'+instruction+'</p>':'<p>'+instruction+'</p><p class="demo-cue">'+cue+'</p>';
  $('movementDialog').showModal();
 }
 function renderMobilityRoutine() {
