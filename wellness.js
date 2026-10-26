@@ -165,15 +165,22 @@
     }
   };
   let mobilityChecks = {};
-  function renderMobilityRoutine() {
+  function openMobilityDemo(name,cue,instruction){
+ const steps=[name+' — starting position','Move slowly through a comfortable range','Return to the start and relax'];
+ $('movementTitle').textContent=name;
+ $('movementDemoBody').innerHTML='<div class="movement-demo-stage"><div class="movement-demo-figure mobility"><svg viewBox="0 0 120 140" aria-hidden="true"><circle cx="60" cy="22" r="10"/><path d="M60 33 L60 76 M60 43 L35 58 L28 44 M60 43 L85 58 L92 44 M60 76 L43 111 L37 132 M60 76 L77 111 L83 132" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="demo-motion-arrow">↻</span></div><p class="demo-cue">'+cue+'</p></div><ol class="demo-steps">'+steps.map(x=>'<li>'+x+'</li>').join('')+'</ol><p class="muted small">'+instruction+'</p>';
+ $('movementDialog').showModal();
+}
+function renderMobilityRoutine() {
     const select=$('mobilityRoutine');
     if(!select)return;
     const routine=mobilityRoutines[select.value]||mobilityRoutines.full;
     const key=select.value;
     mobilityChecks[key]=mobilityChecks[key]||[];
     $('mobilityRoutineIntro').textContent=routine.intro;
-    $('mobilitySteps').innerHTML=routine.steps.map((step,i)=>'<label class="mobility-step '+(mobilityChecks[key].includes(i)?'done':'')+'"><input type="checkbox" data-mobility-step="'+i+'" '+(mobilityChecks[key].includes(i)?'checked':'')+'><span class="mobility-figure" aria-hidden="true"><svg viewBox="0 0 80 88"><circle cx="40" cy="17" r="7"/><path d="M40 25 L40 49 M40 32 L23 23 M40 32 L57 23 M40 49 L29 72 M40 49 L51 72" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M15 38 Q8 28 16 18 M64 38 Q72 28 64 18" fill="none" stroke="#D88D67" stroke-width="2.5" stroke-linecap="round" class="motion-arrow"/></svg></span><span class="mobility-step-copy"><strong>'+safe(step[0])+'</strong><small>'+safe(step[1])+'</small><span>'+safe(step[2])+'</span></span></label>').join('');
+    $('mobilitySteps').innerHTML=routine.steps.map((step,i)=>'<label class="mobility-step '+(mobilityChecks[key].includes(i)?'done':'')+'"><input type="checkbox" data-mobility-step="'+i+'" '+(mobilityChecks[key].includes(i)?'checked':'')+'><span class="mobility-figure" aria-hidden="true"><svg viewBox="0 0 80 88"><circle cx="40" cy="17" r="7"/><path d="M40 25 L40 49 M40 32 L23 23 M40 32 L57 23 M40 49 L29 72 M40 49 L51 72" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M15 38 Q8 28 16 18 M64 38 Q72 28 64 18" fill="none" stroke="#D88D67" stroke-width="2.5" stroke-linecap="round" class="motion-arrow"/></svg></span><span class="mobility-step-copy"><strong>'+safe(step[0])+'</strong><small>'+safe(step[1])+'</small><span>'+safe(step[2])+'</span><button type="button" class="mini-button mobility-demo-button" data-mobility-demo="'+i+'">Watch movement</button></span></label>').join('');
     $('mobilityProgress').textContent=mobilityChecks[key].length+' of '+routine.steps.length+' movements complete';
+    $('mobilitySteps').querySelectorAll('[data-mobility-demo]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const step=routine.steps[Number(button.dataset.mobilityDemo)];openMobilityDemo(step[0],step[1],step[2])}));
     $('mobilitySteps').querySelectorAll('[data-mobility-step]').forEach(input=>input.addEventListener('change',()=>{
       const i=Number(input.dataset.mobilityStep);
       mobilityChecks[key]=input.checked?[...new Set([...mobilityChecks[key],i])]:mobilityChecks[key].filter(n=>n!==i);
