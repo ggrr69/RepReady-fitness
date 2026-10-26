@@ -195,3 +195,15 @@ footer{color:#526258}
 .real-demo-placeholder p{margin:0;line-height:1.45;color:#52685d}
 .real-demo-link{display:block;text-decoration:none;text-align:center;padding:12px 16px;border-radius:12px;max-width:300px;margin-top:4px}
 .real-demo-wrap{margin:10px 0}
+
+/* Goodstride instructor concept preview */
+.gs-instructor-stage{overflow:hidden;border:1px solid #e2d8c9;border-radius:20px;background:linear-gradient(150deg,#f7f0e5,#e9dfd0);color:#173f35;padding:16px 14px 12px;text-align:center}
+.gs-stage-kicker{font-size:10px;font-weight:800;letter-spacing:.14em;color:#66766b}
+.gs-instructor-art{max-width:300px;margin:2px auto 0;height:270px;display:grid;place-items:center}
+.gs-instructor-art svg{height:100%;width:100%;overflow:visible}
+.gs-avatar-motion{transform-origin:120px 155px;animation:gs-idle 3s ease-in-out infinite}
+.gs-stage-caption{display:flex;flex-direction:column;gap:3px;padding:0 8px 4px}
+.gs-stage-caption strong{font-size:16px}
+.gs-stage-caption span{font-size:12px;color:#68776e}
+@keyframes gs-idle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-2px) rotate(.5deg)}}
+@media(prefers-reduced-motion:reduce){.gs-avatar-motion{animation:none}}
