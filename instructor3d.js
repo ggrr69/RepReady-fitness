@@ -51,11 +51,22 @@
     return {root,arms};
   }
   function boot(stage) {
-    if(!stage || !window.THREE) return;
-    if(G.active && G.active.renderer) { try{G.active.renderer.dispose();}catch{} }
-    const T=window.THREE, canvas=stage.querySelector('canvas');
-    if(!canvas) return;
-    const renderer=new T.WebGLRenderer({canvas,alpha:true,antialias:true});
+    if(!stage) return;
+    if(G.active && G.active.stop) { try{G.active.stop();}catch{} }
+    const canvas=stage.querySelector('canvas');
+    if(!window.THREE || !canvas) {
+      stage.classList.add('gs3d-fallback');
+      const loading=stage.querySelector('.gs3d-loading'); if(loading) loading.textContent='Illustrated movement preview';
+      return;
+    }
+    const T=window.THREE;
+    let renderer;
+    try { renderer=new T.WebGLRenderer({canvas,alpha:true,antialias:true}); }
+    catch(err) {
+      stage.classList.add('gs3d-fallback');
+      const loading=stage.querySelector('.gs3d-loading'); if(loading) loading.textContent='Illustrated movement preview';
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
     renderer.setSize(Math.max(260,stage.clientWidth||300),260,false);
     renderer.shadowMap.enabled=true;renderer.outputColorSpace=T.SRGBColorSpace;
@@ -98,7 +109,7 @@
     if(/shoulder|arm circle/.test(n)){type='shoulder';title='Shoulder circles';instructions='Lift shoulders gently, roll them forward, then reverse direction. Keep your neck relaxed.';}
     else if(/chair sit|sit.to.stand/.test(n)){type='chair';title='Chair sit-to-stand';instructions='Lean forward slightly, stand tall through your feet, then lower with control.';}
     else if(/wall push|push.up|pushup/.test(n)){type='pushup';title='Wall push-up';instructions='Place hands on the wall at chest height. Bend elbows to approach the wall, then press away.';}
-    return '<div class="gs-instructor-stage"><div class="gs-stage-kicker">GOODSTRIDE CLUB · 3D MOVEMENT PREVIEW</div><div id="gs3dStage" class="gs3d-stage" data-movement="'+type+'"><canvas aria-label="3D Goodstride instructor animation"></canvas><span class="gs3d-loading">Loading instructor…</span></div><div class="gs-stage-caption"><strong>Your Goodstride instructor</strong><span>'+title+'</span></div></div><p class="demo-cue">'+cue+'</p><p class="gs-instructor-instructions">'+instructions+'</p><p class="muted small">Early procedural 3D prototype. Animation is illustrative and should be professionally reviewed before use as exercise instruction.</p>';
+    return '<div class="gs-instructor-stage"><div class="gs-stage-kicker">GOODSTRIDE CLUB · MOVEMENT PREVIEW</div><div id="gs3dStage" class="gs3d-stage gs3d-fallback" data-movement="'+type+'"><svg class="gs-fallback-avatar" viewBox="0 0 240 280" role="img" aria-label="Goodstride instructor movement illustration"><ellipse cx="120" cy="264" rx="53" ry="7" fill="#d8d0c3"/><g class="gs-fallback-legs"><path d="M91 166 L84 228 L77 253 L98 253 L112 203 L128 203 L141 253 L162 253 L148 166Z" fill="#173f35"/><path d="M77 250 L99 250 L104 260 L70 260Z M141 250 L162 250 L174 260 L141 260Z" fill="#fffdf8" stroke="#d4d1c8" stroke-width="2"/></g><g class="gs-fallback-torso"><path d="M84 101 Q120 84 156 101 L165 170 Q120 188 75 170Z" fill="#173f35"/><path d="M87 107 L63 142 L52 133 M153 107 L177 142 L188 133" fill="none" stroke="#c88e6d" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/><path d="M85 108 L70 145 L61 161 M155 108 L170 145 L179 161" fill="none" stroke="#c88e6d" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></g><g class="gs-fallback-head"><path d="M91 35 Q91 10 120 10 Q149 10 149 38 L145 69 Q140 91 120 93 Q100 91 95 69Z" fill="#d5a080"/><path d="M92 38 Q89 10 120 8 Q150 10 149 38 L143 29 Q120 20 97 31Z" fill="#b9a18e"/><rect x="96" y="44" width="22" height="16" rx="5" fill="none" stroke="#27352f" stroke-width="3"/><rect x="122" y="44" width="22" height="16" rx="5" fill="none" stroke="#27352f" stroke-width="3"/><path d="M118 51 L122 51 M107 72 Q120 79 133 72 Q131 90 120 90 Q109 88 107 72Z" fill="#77746b"/></g></svg><canvas aria-label="3D Goodstride instructor animation"></canvas><span class="gs3d-loading">Illustrated movement preview</span></div><div class="gs-stage-caption"><strong>Your Goodstride instructor</strong><span>'+title+'</span></div></div><p class="demo-cue">'+cue+'</p><p class="gs-instructor-instructions">'+instructions+'</p><p class="muted small">Illustrated fallback is shown if 3D rendering is unavailable. The animation remains a prototype and should be professionally reviewed before use as exercise instruction.</p>';
   };
   document.addEventListener('click',e=>{if(e.target.closest('[data-demo-trigger]'))setTimeout(window.initGoodstride3D,0);});
   const originalShow=HTMLDialogElement.prototype.showModal;
