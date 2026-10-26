@@ -150,3 +150,16 @@ footer{color:#526258}
 @keyframes goodstride-arrow{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:1;transform:translateX(2px)}}
 @media(prefers-reduced-motion:reduce){.movement-visual .figure,.motion-arrow{animation:none!important}}
 @media(max-width:480px){.movement-visual{width:64px;min-width:64px;height:74px}.movement-visual svg{width:56px;height:54px}.mobility-figure{width:60px;min-width:60px;height:74px}.mobility-figure svg{width:56px;height:64px}}
+
+/* Consistent illustrated movement cues across mobility and workouts */
+.movement-visual{width:72px;min-width:72px;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:12px;background:#edf3ec;color:#173f35;padding:5px}
+.movement-visual svg{width:64px;height:64px;overflow:visible}
+.movement-visual span{font-size:10px;font-weight:800;letter-spacing:.03em;color:#173f35}
+.exercise-main{align-items:center;gap:10px}
+.exercise-info{min-width:0}
+.mobility-figure{display:grid;place-items:center;width:62px;min-width:62px;height:72px;border-radius:12px;background:#edf3ec;color:#173f35}
+.mobility-figure svg{width:54px;height:62px;overflow:visible}
+.motion-arrow{transform-origin:center;animation:goodstride-nudge 1.7s ease-in-out infinite}
+@keyframes goodstride-nudge{0%,100%{opacity:.65;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
+@media(max-width:420px){.movement-visual{width:62px;min-width:62px}.movement-visual svg{width:56px;height:58px}.exercise-main{gap:8px}}
+@media(prefers-reduced-motion:reduce){.motion-arrow{animation:none}}
