@@ -38,7 +38,21 @@
       <section id="habitsView" class="view hidden">
         <div class="hero compact"><div class="pill">THE FOUNDATIONS</div><h2>Small wins count.</h2><p>Pick a few habits that make you feel better. No streak pressure, no guilt.</p></div>
         <div class="habit-list" id="habitList"></div>
-        <div class="panel"><h3>A little mobility goes a long way</h3><p class="muted">Try 15 minutes of comfortable movement today. Keep it gentle and skip anything that causes pain.</p><button class="primary" id="mobilityDone">✓ Mark mobility complete</button></div>
+        <div class="panel mobility-panel">
+          <div class="eyebrow">GUIDED MOBILITY</div><h3>Find a routine that fits today</h3>
+          <p class="muted">Move at a comfortable pace. Nothing should cause sharp pain; skip or shorten any movement that doesn't feel right.</p>
+          <label for="mobilityRoutine">Choose your routine</label>
+          <select id="mobilityRoutine" class="mobility-select">
+            <option value="full">Full-body mobility · 15 minutes</option>
+            <option value="morning">Morning reset · 8 minutes</option>
+            <option value="desk">Desk reset · 5 minutes</option>
+          </select>
+          <div id="mobilityRoutineIntro" class="mobility-intro"></div>
+          <div id="mobilityProgress" class="mobility-progress" aria-live="polite"></div>
+          <div id="mobilitySteps" class="mobility-steps"></div>
+          <button class="secondary full" id="resetMobilityRoutine" type="button">Reset routine</button>
+          <button class="primary full" id="mobilityDone">✓ Mark mobility complete</button>
+        </div>
       </section>
       <section id="progressView" class="view hidden">
         <div class="hero compact"><div class="pill">YOUR OWN PACE</div><h2>Progress is more than a number.</h2><p>Notice the work you put in, the habits you build, and how you feel along the way.</p></div>
