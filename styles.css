@@ -268,3 +268,24 @@ footer{color:#526258}
 @keyframes gs-fallback-chair-legs{0%,100%{transform:translateY(0)}45%,60%{transform:translateY(8px)}}
 @keyframes gs-fallback-push{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
 @media(prefers-reduced-motion:reduce){.gs-fallback-head,.gs-fallback-torso,.gs-fallback-legs{animation:none!important}}
+
+/* Shoulder-circle fallback: articulated shoulder pivots and clear repeating motion */
+.gs3d-stage{height:300px;max-width:340px}
+.gs3d-stage canvas{height:300px}
+.gs3d-stage .gs-fallback-avatar{height:100%;width:100%;inset:0;object-fit:contain}
+.gs3d-stage.gs3d-fallback canvas{display:none}
+.gs-fallback-left-arm,.gs-fallback-right-arm{transform-box:view-box;transform-origin:140px 130px}
+.gs-fallback-left-arm{transform-origin:105px 128px}
+.gs-fallback-right-arm{transform-origin:175px 128px}
+.gs-move-shoulder .gs-fallback-left-arm{animation:gs-shoulder-circle-left 2.4s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-right-arm{animation:gs-shoulder-circle-right 2.4s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-torso{transform-origin:140px 160px;animation:gs-shoulder-body 2.4s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-head{transform-origin:140px 85px;animation:gs-shoulder-head 2.4s ease-in-out infinite}
+.gs-shoulder-cues{opacity:.9;animation:gs-cue-pulse 1.2s ease-in-out infinite alternate}
+@keyframes gs-shoulder-circle-left{0%,100%{transform:rotate(0deg) translateY(0)}20%{transform:rotate(-10deg) translateY(-5px)}45%{transform:rotate(-17deg) translateY(1px)}70%{transform:rotate(7deg) translateY(4px)}}
+@keyframes gs-shoulder-circle-right{0%,100%{transform:rotate(0deg) translateY(0)}20%{transform:rotate(10deg) translateY(-5px)}45%{transform:rotate(17deg) translateY(1px)}70%{transform:rotate(-7deg) translateY(4px)}}
+@keyframes gs-shoulder-body{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-3px) rotate(-1deg)}50%{transform:translateY(1px) rotate(1deg)}75%{transform:translateY(2px) rotate(0)}}
+@keyframes gs-shoulder-head{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes gs-cue-pulse{from{opacity:.35}to{opacity:.95}}
+@media(max-width:480px){.gs3d-stage{height:270px}.gs3d-stage canvas{height:270px}}
+@media(prefers-reduced-motion:reduce){.gs-fallback-left-arm,.gs-fallback-right-arm,.gs-fallback-torso,.gs-fallback-head,.gs-shoulder-cues{animation:none!important}}
