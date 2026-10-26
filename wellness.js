@@ -123,6 +123,63 @@
     $('foodLog').innerHTML=well.foods.length ? well.foods.map(f=>'<article class="food-item"><div class="food-dot">＋</div><div class="food-copy"><strong>'+safe(f.name)+'</strong><small>'+f.protein+' g protein'+((f.carbs||f.fat)?' · '+(f.carbs||0)+' g carbs · '+(f.fat||0)+' g fat':'')+'</small></div><div class="food-kcal">'+f.cal+' cal</div><button class="remove-food" data-remove-food="'+f.id+'" aria-label="Remove '+safe(f.name)+'">×</button></article>').join('') : '<div class="empty-state"><div class="empty-icon">＋</div><h3>Your food log starts here</h3><p>Add a food above. You can keep it simple and track calories and protein first.</p></div>';
     document.querySelectorAll('[data-remove-food]').forEach(b=>b.addEventListener('click',()=>{well.foods=well.foods.filter(f=>f.id!==b.dataset.removeFood);saveWell();renderFood();updateDashboard()}));
   }
+  const mobilityRoutines = {
+    full: {
+      title:'Full-body mobility · 15 minutes',
+      intro:'A gentle head-to-toe session. Move slowly and breathe normally; use a smaller range if you feel stiff.',
+      steps:[
+        ['Easy breathing and posture','1 minute','Stand or sit tall. Take relaxed breaths and gently roll your shoulders back.'],
+        ['Neck turns','1 minute','Turn your head slowly to look left and right, staying in a comfortable range. Avoid rolling your head backward.'],
+        ['Shoulder circles','1 minute','Make slow circles with both shoulders, then reverse direction.'],
+        ['Wall chest opener','2 minutes','Place a forearm on a wall or door frame and gently turn your body away. Switch sides halfway; keep the stretch mild.'],
+        ['Standing upper-back rotations','2 minutes','Cross your arms over your chest and rotate gently side to side without forcing your lower back.'],
+        ['Hip hinges','2 minutes','With soft knees and hands on hips, push hips back a little and return to standing. Keep your back comfortable.'],
+        ['Supported hip shifts','2 minutes','Hold a chair or counter. Shift your weight gently side to side, keeping feet planted.'],
+        ['Calf raises and ankle circles','2 minutes','Hold support, rise onto your toes slowly, then lower. Finish with small ankle circles on each side.'],
+        ['Easy full-body reset','2 minutes','Walk in place or march gently, then take a few relaxed breaths.']
+      ]
+    },
+    morning: {
+      title:'Morning reset · 8 minutes',
+      intro:'An easy start to the day—no equipment needed.',
+      steps:[
+        ['Relaxed breathing','1 minute','Sit or stand tall and take slow, comfortable breaths.'],
+        ['Shoulder circles','1 minute','Roll shoulders slowly forward and backward.'],
+        ['Gentle neck turns','1 minute','Look left and right without forcing the movement.'],
+        ['Reach and side bend','2 minutes','Reach one arm overhead and lean slightly to the opposite side. Alternate gently.'],
+        ['Hip hinges','1 minute','Push hips back with soft knees, then stand tall again.'],
+        ['Supported calf raises','1 minute','Hold a counter or chair and raise and lower your heels slowly.'],
+        ['Easy march','1 minute','March in place at a comfortable pace.']
+      ]
+    },
+    desk: {
+      title:'Desk reset · 5 minutes',
+      intro:'A short break for long sitting days. Stay seated for any movement that feels better that way.',
+      steps:[
+        ['Shoulder rolls','1 minute','Roll shoulders slowly up, back, and down.'],
+        ['Neck turns','1 minute','Turn your head gently left and right; keep the motion small and easy.'],
+        ['Seated upper-back turns','1 minute','Sit tall with arms crossed and rotate gently each way.'],
+        ['Ankle pumps','1 minute','Lift toes and heels alternately, then make small ankle circles.'],
+        ['Stand and stretch tall','1 minute','If comfortable, stand, reach upward gently, then sit or stand with relaxed breathing.']
+      ]
+    }
+  };
+  let mobilityChecks = {};
+  function renderMobilityRoutine() {
+    const select=$('mobilityRoutine');
+    if(!select)return;
+    const routine=mobilityRoutines[select.value]||mobilityRoutines.full;
+    const key=select.value;
+    mobilityChecks[key]=mobilityChecks[key]||[];
+    $('mobilityRoutineIntro').textContent=routine.intro;
+    $('mobilitySteps').innerHTML=routine.steps.map((step,i)=>'<label class="mobility-step '+(mobilityChecks[key].includes(i)?'done':'')+'"><input type="checkbox" data-mobility-step="'+i+'" '+(mobilityChecks[key].includes(i)?'checked':'')+'><span class="mobility-step-copy"><strong>'+safe(step[0])+'</strong><small>'+safe(step[1])+'</small><span>'+safe(step[2])+'</span></span></label>').join('');
+    $('mobilityProgress').textContent=mobilityChecks[key].length+' of '+routine.steps.length+' movements complete';
+    $('mobilitySteps').querySelectorAll('[data-mobility-step]').forEach(input=>input.addEventListener('change',()=>{
+      const i=Number(input.dataset.mobilityStep);
+      mobilityChecks[key]=input.checked?[...new Set([...mobilityChecks[key],i])]:mobilityChecks[key].filter(n=>n!==i);
+      renderMobilityRoutine();
+    }));
+  }
   function renderHabits() {
     $('habitList').innerHTML=habits.map(h=>'<label class="habit-item '+(well.habits[h.id]?'done':'')+'"><input class="habit-check" type="checkbox" data-habit="'+h.id+'" '+(well.habits[h.id]?'checked':'')+'><span class="well-icon">'+h.icon+'</span><span class="habit-copy"><strong>'+h.name+'</strong><p>'+h.desc+'</p></span></label>').join('');
     document.querySelectorAll('[data-habit]').forEach(c=>c.addEventListener('change',()=>{well.habits[c.dataset.habit]=c.checked;saveWell();renderHabits();updateDashboard()}));
@@ -239,7 +296,9 @@
   });
   $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
   $('toggleMacroDetails').addEventListener('click',()=>{const el=$('macroDetails');const hidden=el.classList.toggle('hidden');$('toggleMacroDetails').textContent=hidden?'Show carbs & fat ▾':'Hide carbs & fat ▴'});
+  $('mobilityRoutine').addEventListener('change',renderMobilityRoutine);
+  $('resetMobilityRoutine').addEventListener('click',()=>{mobilityChecks[$('mobilityRoutine').value]=[];renderMobilityRoutine()});
   $('mobilityDone').addEventListener('click',()=>{well.extraMobility=!well.extraMobility;well.habits.mobility=well.extraMobility;saveWell();renderHabits();updateDashboard()});
   $('todayDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-  renderFood();renderHabits();updateDashboard();showView('today');
+  renderFood();renderHabits();renderMobilityRoutine();updateDashboard();showView('today');
 })();
