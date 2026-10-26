@@ -246,3 +246,25 @@ footer{color:#526258}
 .gs-instructor-stage .gs-stage-caption{position:relative;z-index:1;margin-top:4px;line-height:1.35}
 .gs-instructor-instructions{border-left:3px solid #d88d67;padding:8px 0 8px 12px;margin:12px 0;color:#173f35}
 @media(max-width:480px){.gs3d-stage{height:230px;max-width:300px}.gs3d-stage canvas{height:230px}.gs-instructor-stage{padding:12px 10px}}
+
+/* Always-visible character fallback; 3D canvas overlays only when supported */
+.gs3d-stage{position:relative;isolation:isolate}
+.gs3d-stage .gs-fallback-avatar{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+.gs3d-stage canvas{position:absolute;inset:0;z-index:1;width:100%;height:100%;background:transparent}
+.gs3d-stage.gs3d-fallback canvas{display:none}
+.gs3d-stage.gs3d-fallback .gs3d-loading{display:none}
+.gs-fallback-head{transform-origin:120px 52px;animation:gs-head-bob 2.6s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-torso{transform-origin:120px 135px;animation:gs-fallback-roll 1.8s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-torso path:nth-child(2){transform-origin:87px 108px;animation:gs-fallback-arm-l 1.8s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-torso path:nth-child(3){transform-origin:153px 108px;animation:gs-fallback-arm-r 1.8s ease-in-out infinite}
+.gs-move-chair .gs-fallback-torso{transform-origin:120px 160px;animation:gs-fallback-chair 2.4s ease-in-out infinite}
+.gs-move-chair .gs-fallback-legs{transform-origin:120px 205px;animation:gs-fallback-chair-legs 2.4s ease-in-out infinite}
+.gs-move-pushup .gs-fallback-torso{transform-origin:120px 135px;animation:gs-fallback-push 2s ease-in-out infinite}
+@keyframes gs-head-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
+@keyframes gs-fallback-roll{0%,100%{transform:rotate(0)}50%{transform:rotate(-1deg)}}
+@keyframes gs-fallback-arm-l{0%,100%{transform:rotate(0)}50%{transform:rotate(-12deg)}}
+@keyframes gs-fallback-arm-r{0%,100%{transform:rotate(0)}50%{transform:rotate(12deg)}}
+@keyframes gs-fallback-chair{0%,100%{transform:translateY(0) rotate(0)}45%,60%{transform:translateY(12px) rotate(4deg)}}
+@keyframes gs-fallback-chair-legs{0%,100%{transform:translateY(0)}45%,60%{transform:translateY(8px)}}
+@keyframes gs-fallback-push{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){.gs-fallback-head,.gs-fallback-torso,.gs-fallback-legs{animation:none!important}}
