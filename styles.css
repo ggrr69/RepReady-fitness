@@ -187,3 +187,11 @@ footer{color:#526258}
 @keyframes demo-lunge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px) translateY(3px)}}
 @keyframes demo-turn{0%,100%{transform:rotate(0);opacity:.5}50%{transform:rotate(160deg);opacity:1}}
 @media(prefers-reduced-motion:reduce){.movement-demo-figure svg,.demo-motion-arrow{animation:none!important}}
+
+/* Real-person demonstration links */
+.real-demo-placeholder{border-radius:18px;background:#edf3ec;padding:24px 18px;text-align:center;color:#173f35;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:190px;justify-content:center}
+.real-demo-icon{width:54px;height:54px;border-radius:50%;background:#173f35;color:#fffdf8;display:grid;place-items:center;font-size:23px;padding-left:4px}
+.real-demo-placeholder strong{font-size:17px;line-height:1.35}
+.real-demo-placeholder p{margin:0;line-height:1.45;color:#52685d}
+.real-demo-link{display:block;text-decoration:none;text-align:center;padding:12px 16px;border-radius:12px;max-width:300px;margin-top:4px}
+.real-demo-wrap{margin:10px 0}
