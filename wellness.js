@@ -172,7 +172,7 @@
     const key=select.value;
     mobilityChecks[key]=mobilityChecks[key]||[];
     $('mobilityRoutineIntro').textContent=routine.intro;
-    $('mobilitySteps').innerHTML=routine.steps.map((step,i)=>'<label class="mobility-step '+(mobilityChecks[key].includes(i)?'done':'')+'"><input type="checkbox" data-mobility-step="'+i+'" '+(mobilityChecks[key].includes(i)?'checked':'')+'><span class="mobility-step-copy"><strong>'+safe(step[0])+'</strong><small>'+safe(step[1])+'</small><span>'+safe(step[2])+'</span></span></label>').join('');
+    $('mobilitySteps').innerHTML=routine.steps.map((step,i)=>'<label class="mobility-step '+(mobilityChecks[key].includes(i)?'done':'')+'"><input type="checkbox" data-mobility-step="'+i+'" '+(mobilityChecks[key].includes(i)?'checked':'')+'><span class="mobility-figure" aria-hidden="true"><svg viewBox="0 0 80 88"><circle cx="40" cy="17" r="7"/><path d="M40 25 L40 49 M40 32 L23 23 M40 32 L57 23 M40 49 L29 72 M40 49 L51 72" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M15 38 Q8 28 16 18 M64 38 Q72 28 64 18" fill="none" stroke="#D88D67" stroke-width="2.5" stroke-linecap="round" class="motion-arrow"/></svg></span><span class="mobility-step-copy"><strong>'+safe(step[0])+'</strong><small>'+safe(step[1])+'</small><span>'+safe(step[2])+'</span></span></label>').join('');
     $('mobilityProgress').textContent=mobilityChecks[key].length+' of '+routine.steps.length+' movements complete';
     $('mobilitySteps').querySelectorAll('[data-mobility-step]').forEach(input=>input.addEventListener('change',()=>{
       const i=Number(input.dataset.mobilityStep);
