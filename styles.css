@@ -163,3 +163,27 @@ footer{color:#526258}
 @keyframes goodstride-nudge{0%,100%{opacity:.65;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
 @media(max-width:420px){.movement-visual{width:62px;min-width:62px}.movement-visual svg{width:56px;height:58px}.exercise-main{gap:8px}}
 @media(prefers-reduced-motion:reduce){.motion-arrow{animation:none}}
+
+/* Tap-to-open movement demonstration */
+.demo-button,.mobility-demo-button{margin-top:8px;white-space:nowrap}
+#movementDialog{width:min(92vw,460px);max-height:88vh;overflow:auto;border:1px solid #dce7dc;border-radius:22px;padding:20px;background:#fffdf8;color:#173f35;box-shadow:0 24px 70px #102d2633}
+#movementDialog::backdrop{background:#102d2677;backdrop-filter:blur(3px)}
+.movement-demo-stage{background:#edf3ec;border-radius:18px;padding:18px;display:flex;align-items:center;gap:18px;min-height:180px}
+.movement-demo-figure{width:128px;min-width:128px;height:150px;position:relative;display:grid;place-items:center;color:#173f35}
+.movement-demo-figure svg{width:110px;height:132px;animation:demo-bob 2.4s ease-in-out infinite}
+.movement-demo-figure.squat svg{animation:demo-squat 3s ease-in-out infinite}
+.movement-demo-figure.hinge svg{animation:demo-hinge 3s ease-in-out infinite}
+.movement-demo-figure.pull svg,.movement-demo-figure.press svg{animation:demo-arms 2.6s ease-in-out infinite}
+.movement-demo-figure.lunge svg{animation:demo-lunge 3s ease-in-out infinite}
+.movement-demo-figure.core svg{animation:demo-bob 2.4s ease-in-out infinite}
+.demo-motion-arrow{position:absolute;right:0;top:10px;font-size:30px;color:#d88d67;animation:demo-turn 2s ease-in-out infinite}
+.demo-cue{font-weight:600;line-height:1.45;flex:1}
+.demo-steps{padding-left:24px;line-height:1.5}
+.demo-steps li{margin:8px 0;padding-left:3px}
+@keyframes demo-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes demo-squat{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(7px) scaleY(.92)}}
+@keyframes demo-hinge{0%,100%{transform:rotate(0)}50%{transform:rotate(9deg) translateY(3px)}}
+@keyframes demo-arms{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes demo-lunge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px) translateY(3px)}}
+@keyframes demo-turn{0%,100%{transform:rotate(0);opacity:.5}50%{transform:rotate(160deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.movement-demo-figure svg,.demo-motion-arrow{animation:none!important}}
