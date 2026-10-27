@@ -17,38 +17,40 @@
   }
   function createCharacter(T, scene) {
     const root=new T.Group();scene.add(root);
-    // Feet, shorts, torso and neck
-    ball(T,root,green, -.18,.55,0,.16,.28,.17); ball(T,root,green,.18,.55,0,.16,.28,.17);
+    // Lower body and shoes
+    ball(T,root,green,-.18,.55,0,.16,.28,.17); ball(T,root,green,.18,.55,0,.16,.28,.17);
     ball(T,root,ivory,-.19,.15,.07,.22,.09,.31); ball(T,root,ivory,.19,.15,.07,.22,.09,.31);
     ball(T,root,green,0,1.03,0,.39,.38,.23);
-    ball(T,root,green,0,1.39,0,.37,.48,.23);
-    ball(T,root,skin,0,1.85,0,.105,.16,.105);
-    // Head: bald head, ears, nose, glasses, eyes, salt-and-pepper beard
-    ball(T,root,skin,0,2.13,0,.27,.32,.245);
-    ball(T,root,skin,-.275,2.13,0,.045,.075,.055);ball(T,root,skin,.275,2.13,0,.045,.075,.055);
-    ball(T,root,skin,0,2.11,.237,.045,.06,.055);
-    ball(T,root,beard,0,1.96,.11,.19,.12,.17);
-    // Glasses frames and bridge, on the front (+z)
+    // Torso, neck and head are separate groups so posture can be adjusted later
+    const torso=new T.Group();torso.position.set(0,1.39,0);root.add(torso);
+    ball(T,torso,green,0,0,0,.37,.48,.23);
+    ball(T,torso,greenLight,0,.36,0,.22,.045,.18);
+    const neck=new T.Group();neck.position.set(0,.47,0);torso.add(neck);
+    ball(T,neck,skin,0,.02,0,.105,.16,.105);
+    const head=new T.Group();head.position.set(0,.72,0);neck.add(head);
+    ball(T,head,skin,0,0,0,.27,.32,.245);
+    ball(T,head,skin,-.275,0,0,.045,.075,.055);ball(T,head,skin,.275,0,0,.045,.075,.055);
+    ball(T,head,skin,0,-.02,.237,.045,.06,.055);
+    ball(T,head,beard,0,-.17,.11,.19,.12,.17);
     for(const x of [-.115,.115]) {
-      const ring=makeMesh(T,new T.TorusGeometry(.082,.014,8,24),0x27352f,root,x,2.17,.222);
+      const ring=makeMesh(T,new T.TorusGeometry(.082,.014,8,24),0x27352f,head,x,.04,.222);
       ring.scale.set(1,.76,1);
-      ball(T,root,0x27352f,x-.005,2.175,.226,.012,.012,.008);
+      ball(T,head,0x27352f,x-.005,.045,.226,.012,.012,.008);
     }
-    limb(T,root,[-.03,2.17,.235],[.03,2.17,.235],.009,.009,0x27352f);
-    // Arms pivot at shoulder so the movement remains connected.
+    limb(T,head,[-.03,.04,.235],[.03,.04,.235],.009,.009,0x27352f);
+    // Articulated arm hierarchy: shoulder pivot -> upper arm -> elbow pivot -> forearm/hand.
     const arms=[];
     for(const side of [-1,1]) {
-      const pivot=new T.Group();pivot.position.set(side*.35,1.62,0);root.add(pivot);
-      limb(T,pivot,[0,0,0],[side*.07,-.27,0],.105,.085,skin);
-      const elbow=[side*.07,-.27,0];
-      limb(T,pivot,elbow,[side*.12,-.51,.025],.08,.065,skin);
-      ball(T,pivot,skin,side*.12,-.53,.03,.075,.08,.07);
-      arms.push({side,pivot});
+      const shoulder=new T.Group(); shoulder.position.set(side*.34,.22,0); torso.add(shoulder);
+      ball(T,shoulder,skin,0,0,0,.115,.12,.115);
+      limb(T,shoulder,[0,0,0],[side*.06,-.24,.015],.105,.085,skin);
+      const elbow=new T.Group(); elbow.position.set(side*.06,-.24,.015); shoulder.add(elbow);
+      ball(T,elbow,skin,0,0,0,.078,.078,.075);
+      limb(T,elbow,[0,0,0],[side*.04,-.24,.035],.078,.061,skin);
+      ball(T,elbow,skin,side*.04,-.245,.035,.066,.07,.065);
+      arms.push({side,shoulder,elbow});
     }
-    // Shirt seam and a simple friendly smile
-    limb(T,root,[-.14,1.42,.222],[0,1.38,.238],.008,.008,greenLight);
-    limb(T,root,[0,1.38,.238],[.14,1.42,.222],.008,.008,greenLight);
-    return {root,arms};
+    return {root,torso,head,arms};
   }
   function boot(stage) {
     if(!stage) return;
@@ -76,7 +78,7 @@
     const key=new T.DirectionalLight(0xffffff,2.1);key.position.set(-3,5,5);scene.add(key);
     const floor=new T.Mesh(new T.CircleGeometry(1.15,48),new T.MeshStandardMaterial({color:0xd8d0c3,roughness:1}));
     floor.rotation.x=-Math.PI/2;floor.position.y=.045;floor.scale.set(1.1,.48,1);scene.add(floor);
-    const {root,arms}=createCharacter(T,scene);
+    const {root,torso,head,arms}=createCharacter(T,scene);
     const movement=(stage.dataset.movement||'generic').toLowerCase();
     const clock=new T.Clock();
     function resize(){const w=Math.max(260,stage.clientWidth||300);renderer.setSize(w,260,false);camera.aspect=w/260;camera.updateProjectionMatrix();}
@@ -84,16 +86,29 @@
     let alive=true;
     function frame(){
       if(!alive)return;
-      const t=clock.getElapsedTime(), s=Math.sin(t*2.6);
-      root.position.y=.025*Math.sin(t*1.3);
-      arms.forEach(({side,pivot})=>{
-        pivot.rotation.set(0,0,0);
-        if(/shoulder|arm circle/.test(movement)) { pivot.rotation.z=side*(.1+.25*Math.sin(t*2.2)); pivot.rotation.x=.08*Math.cos(t*2.2); }
-        else if(/push.up|pushup|wall push/.test(movement)) { pivot.rotation.z=side*(.1+.22*(.5+.5*Math.sin(t*2))); }
-        else if(/chair|sit.to.stand/.test(movement)) { pivot.rotation.z=side*(.04+.06*Math.sin(t*2)); }
+      const t=clock.getElapsedTime(), phase=t*1.65;
+      root.position.y=.008*Math.sin(t*1.3);
+      root.rotation.set(0,0,0);torso.rotation.set(0,0,0);head.rotation.set(0,0,0);
+      arms.forEach(({side,shoulder,elbow})=>{
+        shoulder.rotation.set(0,0,0);elbow.rotation.set(0,0,0);
+        if(/shoulder|arm circle/.test(movement)){
+          // A smooth, elliptical three-axis shoulder roll; elbow follows with a slight bend.
+          shoulder.rotation.x=.16*Math.sin(phase);
+          shoulder.rotation.z=side*(.11+.13*Math.cos(phase));
+          shoulder.rotation.y=side*.10*Math.sin(phase+.6);
+          elbow.rotation.z=side*(.06+.05*Math.sin(phase-.35));
+          torso.rotation.z=.018*Math.sin(phase);
+          head.rotation.z=.012*Math.sin(phase);
+        } else if(/push.up|pushup|wall push/.test(movement)){
+          shoulder.rotation.z=side*(.08+.18*(.5+.5*Math.sin(t*1.7)));
+          elbow.rotation.z=side*(.15+.18*(.5+.5*Math.sin(t*1.7)));
+          torso.rotation.x=.035*Math.sin(t*1.7);
+        } else if(/chair|sit.to.stand/.test(movement)){
+          shoulder.rotation.z=side*(.04+.035*Math.sin(t*1.5));
+          elbow.rotation.z=side*.06;
+        }
       });
-      if(/chair|sit.to.stand/.test(movement)){root.position.y=.02+.13*(.5+.5*Math.sin(t*1.6));root.rotation.x=.07*Math.max(0,Math.sin(t*1.6));}
-      else if(/push.up|pushup|wall push/.test(movement)){root.rotation.x=.035*Math.sin(t*2);}
+      if(/chair|sit.to.stand/.test(movement)){root.position.y=.015+.08*(.5+.5*Math.sin(t*1.5));torso.rotation.x=.055*Math.max(0,Math.sin(t*1.5));}
       renderer.render(scene,camera);G.raf=requestAnimationFrame(frame);
     }
     frame();G.active={renderer,observer,stop:()=>{alive=false;cancelAnimationFrame(G.raf);if(observer)observer.disconnect();renderer.dispose();}};
