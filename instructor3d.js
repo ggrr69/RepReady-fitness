@@ -112,13 +112,20 @@
       arms.forEach(({side,shoulder,elbow})=>{
         shoulder.rotation.set(0,0,0);elbow.rotation.set(0,0,0);
         if(/shoulder|arm circle/.test(movement)){
-          // A smooth, elliptical three-axis shoulder roll; elbow follows with a slight bend.
-          shoulder.rotation.x=.16*Math.sin(phase);
-          shoulder.rotation.z=side*(.11+.13*Math.cos(phase));
-          shoulder.rotation.y=side*.10*Math.sin(phase+.6);
-          elbow.rotation.z=side*(.06+.05*Math.sin(phase-.35));
-          torso.rotation.z=.018*Math.sin(phase);
-          head.rotation.z=.012*Math.sin(phase);
+          // Clear shoulder-roll cycle: shrug up, glide forward, lower, then roll back.
+          // The shoulder pivots translate as well as rotate, so the motion reads on a phone.
+          const cycle=phase % (Math.PI*2);
+          const lift=(1-Math.cos(cycle))*.5;
+          const forward=Math.sin(cycle);
+          shoulder.position.y=.27 + .105*lift;
+          shoulder.position.z=.035 + .055*forward;
+          shoulder.rotation.x=.24*forward;
+          shoulder.rotation.z=side*(.025 + .085*Math.cos(cycle));
+          shoulder.rotation.y=side*.18*forward;
+          elbow.rotation.x=.06 + .09*lift;
+          elbow.rotation.z=side*(.025 + .035*Math.sin(cycle-.4));
+          torso.rotation.z=.008*Math.sin(cycle);
+          head.rotation.z=.004*Math.sin(cycle);
         } else if(/push.up|pushup|wall push/.test(movement)){
           shoulder.rotation.z=side*(.08+.18*(.5+.5*Math.sin(t*1.7)));
           elbow.rotation.z=side*(.15+.18*(.5+.5*Math.sin(t*1.7)));
