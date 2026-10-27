@@ -74,13 +74,13 @@
     // The stage starts in fallback mode so users always see a character.
     // Hide the fallback only after WebGL successfully creates a renderer.
     stage.classList.remove('gs3d-fallback');
+    stage.classList.add('gs3d-rendered');
     renderer.shadowMap.enabled=true;renderer.outputColorSpace=T.SRGBColorSpace;
     const scene=new T.Scene();scene.background=null;
     const camera=new T.PerspectiveCamera(32,1,.1,100);camera.position.set(0,1.55,7.2);camera.lookAt(0,1.25,0);
     scene.add(new T.HemisphereLight(0xfff4e5,0x6a786e,2.1));
     const key=new T.DirectionalLight(0xffffff,2.1);key.position.set(-3,5,5);scene.add(key);
-    const floor=new T.Mesh(new T.CircleGeometry(1.15,48),new T.MeshStandardMaterial({color:0xd8d0c3,roughness:1}));
-    floor.rotation.x=-Math.PI/2;floor.position.y=.045;floor.scale.set(1.1,.48,1);scene.add(floor);
+    // Avoid a solid ground disc crossing the character's feet in the angled mobile view.
     const {root,torso,head,arms}=createCharacter(T,scene);
     const movement=(stage.dataset.movement||'generic').toLowerCase();
     const clock=new T.Clock();
