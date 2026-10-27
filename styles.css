@@ -324,3 +324,9 @@ footer{color:#526258}
 50%{transform:rotate(13deg)}
 75%{transform:rotate(-5deg)}
 }
+
+/* Once WebGL is active, hide the SVG fallback behind the canvas */
+.gs3d-stage.gs3d-rendered .gs-fallback-avatar{display:none!important}
+.gs3d-stage.gs3d-rendered .gs3d-loading{display:none!important}
+.gs3d-stage.gs3d-rendered canvas{z-index:2;background:transparent}
+.gs3d-stage.gs3d-rendered{background:linear-gradient(150deg,#f5eddf,#e8dece)}
