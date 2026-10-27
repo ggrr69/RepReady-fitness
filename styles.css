@@ -289,3 +289,38 @@ footer{color:#526258}
 @keyframes gs-cue-pulse{from{opacity:.35}to{opacity:.95}}
 @media(max-width:480px){.gs3d-stage{height:270px}.gs3d-stage canvas{height:270px}}
 @media(prefers-reduced-motion:reduce){.gs-fallback-left-arm,.gs-fallback-right-arm,.gs-fallback-torso,.gs-fallback-head,.gs-shoulder-cues{animation:none!important}}
+
+/* Shoulder circles: move the shoulder joints through a circular path, not just vertical swings */
+.gs-move-shoulder .gs-fallback-left-arm,
+.gs-move-shoulder .gs-fallback-right-arm{animation:none!important;transform:none}
+.gs-fallback-left-shoulder,.gs-fallback-right-shoulder{transform-box:view-box;transform-origin:center}
+.gs-move-shoulder .gs-fallback-left-shoulder{animation:gs-joint-circle-left 2.8s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-right-shoulder{animation:gs-joint-circle-right 2.8s ease-in-out infinite}
+.gs-move-shoulder .gs-fallback-left-arm>path,
+.gs-move-shoulder .gs-fallback-right-arm>path{animation:gs-arm-orbit 2.8s ease-in-out infinite;transform-box:view-box;transform-origin:140px 140px}
+.gs-move-shoulder .gs-fallback-left-arm>path{animation-name:gs-arm-orbit-left}
+.gs-move-shoulder .gs-fallback-right-arm>path{animation-name:gs-arm-orbit-right}
+@keyframes gs-joint-circle-left{
+0%,100%{transform:translate(0,0) rotate(0deg)}
+25%{transform:translate(-5px,-4px) rotate(-9deg)}
+50%{transform:translate(-2px,2px) rotate(-18deg)}
+75%{transform:translate(4px,3px) rotate(-7deg)}
+}
+@keyframes gs-joint-circle-right{
+0%,100%{transform:translate(0,0) rotate(0deg)}
+25%{transform:translate(5px,-4px) rotate(9deg)}
+50%{transform:translate(2px,2px) rotate(18deg)}
+75%{transform:translate(-4px,3px) rotate(7deg)}
+}
+@keyframes gs-arm-orbit-left{
+0%,100%{transform:rotate(0deg)}
+25%{transform:rotate(-7deg)}
+50%{transform:rotate(-13deg)}
+75%{transform:rotate(5deg)}
+}
+@keyframes gs-arm-orbit-right{
+0%,100%{transform:rotate(0deg)}
+25%{transform:rotate(7deg)}
+50%{transform:rotate(13deg)}
+75%{transform:rotate(-5deg)}
+}
