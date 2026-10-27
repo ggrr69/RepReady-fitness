@@ -71,6 +71,9 @@
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
     renderer.setSize(Math.max(260,stage.clientWidth||300),260,false);
+    // The stage starts in fallback mode so users always see a character.
+    // Hide the fallback only after WebGL successfully creates a renderer.
+    stage.classList.remove('gs3d-fallback');
     renderer.shadowMap.enabled=true;renderer.outputColorSpace=T.SRGBColorSpace;
     const scene=new T.Scene();scene.background=null;
     const camera=new T.PerspectiveCamera(32,1,.1,100);camera.position.set(0,1.55,7.2);camera.lookAt(0,1.25,0);
