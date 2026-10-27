@@ -17,40 +17,57 @@
   }
   function createCharacter(T, scene) {
     const root=new T.Group();scene.add(root);
-    // Lower body and shoes
-    ball(T,root,green,-.18,.55,0,.16,.28,.17); ball(T,root,green,.18,.55,0,.16,.28,.17);
-    ball(T,root,ivory,-.19,.15,.07,.22,.09,.31); ball(T,root,ivory,.19,.15,.07,.22,.09,.31);
-    ball(T,root,green,0,1.03,0,.39,.38,.23);
-    // Torso, neck and head are separate groups so posture can be adjusted later
-    const torso=new T.Group();torso.position.set(0,1.39,0);root.add(torso);
-    ball(T,torso,green,0,0,0,.37,.48,.23);
-    ball(T,torso,greenLight,0,.36,0,.22,.045,.18);
-    const neck=new T.Group();neck.position.set(0,.47,0);torso.add(neck);
-    ball(T,neck,skin,0,.02,0,.105,.16,.105);
-    const head=new T.Group();head.position.set(0,.19,0);neck.add(head);
-    ball(T,head,skin,0,0,0,.27,.32,.245);
-    ball(T,head,skin,-.275,0,0,.045,.075,.055);ball(T,head,skin,.275,0,0,.045,.075,.055);
-    ball(T,head,skin,0,-.02,.237,.045,.06,.055);
-    ball(T,head,beard,0,-.17,.11,.19,.12,.17);
-    for(const x of [-.115,.115]) {
-      const ring=makeMesh(T,new T.TorusGeometry(.082,.014,8,24),0x27352f,head,x,.04,.222);
-      ring.scale.set(1,.76,1);
-      ball(T,head,0x27352f,x-.005,.045,.226,.012,.012,.008);
+    // Human-shaped lower body: pelvis, thighs, calves and shoes overlap at joints.
+    ball(T,root,green,0,.91,0,.34,.28,.22);
+    const legs=[];
+    for(const side of [-1,1]){
+      const hip=new T.Group();hip.position.set(side*.17,.83,0);root.add(hip);
+      ball(T,hip,green,0,-.12,0,.155,.25,.17);
+      limb(T,hip,[0,-.12,0],[side*.015,-.39,.005],.145,.115,green);
+      const knee=new T.Group();knee.position.set(side*.015,-.39,.005);hip.add(knee);
+      ball(T,knee,green,0,0,0,.12,.12,.13);
+      limb(T,knee,[0,0,0],[side*.015,-.28,.01],.112,.085,green);
+      ball(T,knee,green,side*.015,-.23,.01,.09,.14,.105);
+      const foot=ball(T,root,ivory,side*.18,.13,.075,.22,.085,.29);
+      legs.push({side,hip,knee,foot});
     }
-    limb(T,head,[-.03,.04,.235],[.03,.04,.235],.009,.009,0x27352f);
-    // Articulated arm hierarchy: shoulder pivot -> upper arm -> elbow pivot -> forearm/hand.
+    // Tapered shirt silhouette, with the waist tucked into the pelvis for a continuous shape.
+    const torso=new T.Group();torso.position.set(0,1.35,0);root.add(torso);
+    ball(T,torso,green,0,-.035,0,.345,.39,.205);
+    ball(T,torso,green,0,.20,0,.39,.31,.22);
+    // Shoulder line / collar
+    limb(T,torso,[-.16,.40,.13],[0,.36,.16],.012,.012,greenLight);
+    limb(T,torso,[0,.36,.16],[.16,.40,.13],.012,.012,greenLight);
+    // Neck sits inside the shirt collar; head overlaps neck instead of floating above it.
+    const neck=new T.Group();neck.position.set(0,.42,0);torso.add(neck);
+    ball(T,neck,skin,0,.035,0,.105,.16,.105);
+    const head=new T.Group();head.position.set(0,.20,0);neck.add(head);
+    ball(T,head,skin,0,0,0,.255,.30,.235);
+    ball(T,head,skin,-.258,-.005,0,.042,.068,.052);
+    ball(T,head,skin,.258,-.005,0,.042,.068,.052);
+    ball(T,head,skin,0,-.035,.226,.034,.047,.045);
+    // Beard follows the lower jaw; glasses sit forward on the face.
+    ball(T,head,beard,0,-.16,.105,.174,.12,.145);
+    for(const x of [-.105,.105]) {
+      const ring=makeMesh(T,new T.TorusGeometry(.074,.012,8,24),0x27352f,head,x,.035,.213);
+      ring.scale.set(1,.78,1);
+      ball(T,head,0x27352f,x-.004,.038,.216,.01,.01,.006);
+    }
+    limb(T,head,[-.028,.035,.22],[.028,.035,.22],.008,.008,0x27352f);
+    // Shoulder pivot -> upper arm -> elbow pivot -> forearm/hand.
+    // Overlapping rounded segments keep the silhouette connected through motion.
     const arms=[];
     for(const side of [-1,1]) {
-      const shoulder=new T.Group(); shoulder.position.set(side*.34,.22,0); torso.add(shoulder);
-      ball(T,shoulder,skin,0,0,0,.115,.12,.115);
-      limb(T,shoulder,[0,0,0],[side*.06,-.24,.015],.105,.085,skin);
-      const elbow=new T.Group(); elbow.position.set(side*.06,-.24,.015); shoulder.add(elbow);
-      ball(T,elbow,skin,0,0,0,.078,.078,.075);
-      limb(T,elbow,[0,0,0],[side*.04,-.24,.035],.078,.061,skin);
-      ball(T,elbow,skin,side*.04,-.245,.035,.066,.07,.065);
+      const shoulder=new T.Group();shoulder.position.set(side*.345,.27,0);torso.add(shoulder);
+      ball(T,shoulder,skin,0,0,0,.105,.115,.105);
+      limb(T,shoulder,[0,0,0],[side*.055,-.245,.005],.092,.078,skin);
+      const elbow=new T.Group();elbow.position.set(side*.055,-.245,.005);shoulder.add(elbow);
+      ball(T,elbow,skin,0,0,0,.073,.075,.072);
+      limb(T,elbow,[0,0,0],[side*.045,-.235,.025],.072,.055,skin);
+      ball(T,elbow,skin,side*.045,-.23,.025,.06,.07,.06);
       arms.push({side,shoulder,elbow});
     }
-    return {root,torso,head,arms};
+    return {root,torso,head,arms,legs};
   }
   function boot(stage) {
     if(!stage) return;
@@ -81,7 +98,7 @@
     scene.add(new T.HemisphereLight(0xfff4e5,0x6a786e,2.1));
     const key=new T.DirectionalLight(0xffffff,2.1);key.position.set(-3,5,5);scene.add(key);
     // Avoid a solid ground disc crossing the character's feet in the angled mobile view.
-    const {root,torso,head,arms}=createCharacter(T,scene);
+    const {root,torso,head,arms,legs}=createCharacter(T,scene);
     const movement=(stage.dataset.movement||'generic').toLowerCase();
     const clock=new T.Clock();
     function resize(){const w=Math.max(260,stage.clientWidth||300);renderer.setSize(w,260,false);camera.aspect=w/260;camera.updateProjectionMatrix();}
