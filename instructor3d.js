@@ -28,6 +28,19 @@
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
     const m=makeMesh(T,g,color,parent);m.material.side=T.DoubleSide;return m;
   }
+  // Smooth tapered tube between joint pivots, avoiding hard-edged cylinders.
+  function smoothLimb(T,parent,a,b,r1,r2,color) {
+    const av=new T.Vector3(...a),bv=new T.Vector3(...b),axis=bv.clone().sub(av),len=axis.length();axis.normalize();
+    const helper=Math.abs(axis.y)<.9?new T.Vector3(0,1,0):new T.Vector3(1,0,0);
+    const u=new T.Vector3().crossVectors(axis,helper).normalize(),v=new T.Vector3().crossVectors(axis,u).normalize();
+    const sides=24,steps=20,verts=[],idx=[];
+    for(let j=0;j<=steps;j++){const t=j/steps, eased=t*t*(3-2*t),r=r1+(r2-r1)*eased;
+      for(let i=0;i<sides;i++){const a0=i/sides*Math.PI*2,p=av.clone().addScaledVector(axis,len*t).addScaledVector(u,Math.cos(a0)*r).addScaledVector(v,Math.sin(a0)*r);verts.push(p.x,p.y,p.z);}
+    }
+    for(let j=0;j<steps;j++)for(let i=0;i<sides;i++){const a0=j*sides+i,b0=j*sides+(i+1)%sides,d0=(j+1)*sides+i,e0=(j+1)*sides+(i+1)%sides;idx.push(a0,b0,d0,b0,e0,d0);}
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setIndex(idx);g.computeVertexNormals();
+    const m=makeMesh(T,g,color,parent);m.material.side=T.DoubleSide;return m;
+  }
   function createCharacter(T, scene) {
     const root=new T.Group();scene.add(root);
     // Human-shaped lower body: pelvis, thighs, calves and shoes overlap at joints.
@@ -36,10 +49,10 @@
     for(const side of [-1,1]){
       const hip=new T.Group();hip.position.set(side*.16,.82,0);root.add(hip);
       ball(T,hip,green,0,-.12,0,.145,.23,.15);
-      limb(T,hip,[0,-.12,0],[side*.015,-.38,.005],.132,.105,green);
+      smoothLimb(T,hip,[0,-.12,0],[side*.015,-.38,.005],.132,.105,green);
       const knee=new T.Group();knee.position.set(side*.015,-.38,.005);hip.add(knee);
       ball(T,knee,green,0,0,0,.12,.12,.13);
-      limb(T,knee,[0,0,0],[side*.015,-.27,.01],.102,.078,green);
+      smoothLimb(T,knee,[0,0,0],[side*.015,-.27,.01],.102,.078,green);
       ball(T,knee,green,side*.015,-.22,.01,.082,.12,.095);
       const foot=ball(T,root,ivory,side*.17,.13,.075,.205,.075,.27);
       legs.push({side,hip,knee,foot});
@@ -73,10 +86,10 @@
     for(const side of [-1,1]) {
       const shoulder=new T.Group();shoulder.position.set(side*.325,.27,0);torso.add(shoulder);
       ball(T,shoulder,skin,0,0,0,.095,.105,.095);
-      limb(T,shoulder,[0,0,0],[side*.055,-.235,.005],.084,.072,skin);
+      smoothLimb(T,shoulder,[0,0,0],[side*.055,-.235,.005],.084,.072,skin);
       const elbow=new T.Group();elbow.position.set(side*.055,-.235,.005);shoulder.add(elbow);
       ball(T,elbow,skin,0,0,0,.073,.075,.072);
-      limb(T,elbow,[0,0,0],[side*.045,-.225,.025],.066,.052,skin);
+      smoothLimb(T,elbow,[0,0,0],[side*.045,-.225,.025],.066,.052,skin);
       ball(T,elbow,skin,side*.045,-.22,.025,.055,.064,.055);
       arms.push({side,shoulder,elbow});
     }
