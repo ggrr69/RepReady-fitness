@@ -27,7 +27,7 @@
     ball(T,torso,greenLight,0,.36,0,.22,.045,.18);
     const neck=new T.Group();neck.position.set(0,.47,0);torso.add(neck);
     ball(T,neck,skin,0,.02,0,.105,.16,.105);
-    const head=new T.Group();head.position.set(0,.72,0);neck.add(head);
+    const head=new T.Group();head.position.set(0,.19,0);neck.add(head);
     ball(T,head,skin,0,0,0,.27,.32,.245);
     ball(T,head,skin,-.275,0,0,.045,.075,.055);ball(T,head,skin,.275,0,0,.045,.075,.055);
     ball(T,head,skin,0,-.02,.237,.045,.06,.055);
@@ -77,7 +77,7 @@
     stage.classList.add('gs3d-rendered');
     renderer.shadowMap.enabled=true;renderer.outputColorSpace=T.SRGBColorSpace;
     const scene=new T.Scene();scene.background=null;
-    const camera=new T.PerspectiveCamera(32,1,.1,100);camera.position.set(0,1.55,7.2);camera.lookAt(0,1.25,0);
+    const camera=new T.PerspectiveCamera(32,1,.1,100);camera.position.set(0,1.45,5.9);camera.lookAt(0,1.22,0);
     scene.add(new T.HemisphereLight(0xfff4e5,0x6a786e,2.1));
     const key=new T.DirectionalLight(0xffffff,2.1);key.position.set(-3,5,5);scene.add(key);
     // Avoid a solid ground disc crossing the character's feet in the angled mobile view.
