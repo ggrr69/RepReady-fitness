@@ -15,6 +15,19 @@
     const m=makeMesh(T,new T.CylinderGeometry(r2,r1,d.length(),14),color,parent);
     m.position.copy(av.add(bv).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return m;
   }
+  // Build a single smooth lofted shirt surface from elliptical cross-sections.
+  function loftBody(T,parent,color,rings,segments=40) {
+    const vertices=[],indices=[];
+    for(const [y,rx,rz,cz=0] of rings) for(let i=0;i<segments;i++){
+      const a=i/segments*Math.PI*2; vertices.push(Math.cos(a)*rx,y,cz+Math.sin(a)*rz);
+    }
+    for(let j=0;j<rings.length-1;j++) for(let i=0;i<segments;i++){
+      const a=j*segments+i,b=j*segments+(i+1)%segments,d=(j+1)*segments+i,e=(j+1)*segments+(i+1)%segments;
+      indices.push(a,b,d,b,e,d);
+    }
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
+    const m=makeMesh(T,g,color,parent);m.material.side=T.DoubleSide;return m;
+  }
   function createCharacter(T, scene) {
     const root=new T.Group();scene.add(root);
     // Human-shaped lower body: pelvis, thighs, calves and shoes overlap at joints.
