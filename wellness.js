@@ -1,0 +1,311 @@
+/* Goodstride Club: local-only nutrition, habits and dashboard layer.
+   This adds wellness views while preserving the original workout program engine. */
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const WELL_KEY = 'goodstride-wellness-v1';
+  const defaultWell = () => ({ foods: [], habits: { water:false, mobility:false, protein:false }, extraMobility:false });
+  let well;
+  try { well = JSON.parse(localStorage.getItem(WELL_KEY)) || defaultWell(); } catch { well = defaultWell(); }
+  well.habits = { ...defaultWell().habits, ...(well.habits || {}) };
+  well.foods = Array.isArray(well.foods) ? well.foods : [];
+  const saveWell = () => { try { localStorage.setItem(WELL_KEY, JSON.stringify(well)); } catch {} };
+  let scanner = null;
+  function validRetailBarcode(code, format) {
+    if (!/^\d+$/.test(code)) return false;
+    if (format === 'ean_13' && code.length === 13 || format === 'upc_a' && code.length === 12 || format === 'ean_8' && code.length === 8) {
+      const digits = code.split('').map(Number);
+      const check = digits.pop();
+      const sum = digits.reduce((total, digit, index) => total + digit * ((digits.length - index) % 2 === 1 ? 3 : 1), 0);
+      return (10 - (sum % 10)) % 10 === check;
+    }
+    return false;
+  }
+  function scannerNotice(message) {
+    let el = document.getElementById('scannerNotice');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'scannerNotice';
+      el.className = 'scanner-notice';
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('visible');
+  }
+  function hideScannerNotice() {
+    const el = document.getElementById('scannerNotice');
+    if (el) el.classList.remove('visible');
+  }
+  const foodSearchResults = $('foodSearchResults');
+  const number = (v) => Number.isFinite(Number(v)) ? Math.max(0, Number(v)) : 0;
+  function showFoodResults(items, source) {
+    if (!items.length) { foodSearchResults.innerHTML = '<p class="muted small">No matching foods found. Try another search or enter the details manually.</p>'; return; }
+    foodSearchResults.innerHTML = items.map((f,i)=>'<button type="button" class="food-result" data-food-result="'+i+'"><strong>'+safe(f.name)+'</strong><small>'+Math.round(f.cal)+' cal · '+Math.round(f.protein)+' g protein · '+Math.round(f.carbs)+' g carbs · '+Math.round(f.fat)+' g fat'+(f.serving?' · '+safe(f.serving):'')+'</small></button>').join('');
+    foodSearchResults.querySelectorAll('[data-food-result]').forEach(b=>b.addEventListener('click',()=> {
+      const f=items[Number(b.dataset.foodResult)];
+      $('foodName').value=f.name; $('foodCalories').value=Number(f.cal.toFixed(1)); $('foodProtein').value=Number(f.protein.toFixed(1)); $('foodCarbs').value=Number(f.carbs.toFixed(1)); $('foodFat').value=Number(f.fat.toFixed(1)); setSuggestedPortions(f.name);
+      const defaultGrams=Number(f.defaultPortionGrams)>0?Number(f.defaultPortionGrams):100;
+      if(defaultGrams!==100){
+        const option=document.createElement('option');option.value=String(defaultGrams);option.textContent=(f.servingLabel||('Package serving ('+defaultGrams+' g)'));$('foodPortion').insertBefore(option,$('foodPortion').lastElementChild);
+      }
+      $('foodPortion').value=String(defaultGrams); $('foodServingGrams').value=defaultGrams; $('customGramsWrap').classList.add('hidden');
+      $('foodForm').scrollIntoView({behavior:'smooth',block:'start'});
+    }));
+  }
+  function fromOFF(p) {
+    const n=p.nutriments||{};
+    const servingText=String(p.serving_size||'').trim();
+    const gramsMatch=servingText.match(/(?:^|[ (])([0-9]+(?:[.,][0-9]+)?)\\s*g\\b/i);
+    const servingGrams=gramsMatch?Number(gramsMatch[1].replace(',','.')):0;
+    return {name:p.product_name||p.product_name_en||'Packaged food',cal:number(n['energy-kcal_100g']??n['energy-kcal']),protein:number(n.proteins_100g),carbs:number(n.carbohydrates_100g),fat:number(n.fat_100g),serving:servingText?(servingText+'; nutrition per 100 g'):'per 100 g',defaultPortionGrams:servingGrams,servingLabel:servingGrams?(servingText+' ('+servingGrams+' g)'):''};
+  }
+  async function lookupBarcode(code) {
+    if(!/^\d{8,14}$/.test(code)){foodSearchResults.innerHTML='<p class="muted small">Enter a valid barcode number.</p>';return;}
+    foodSearchResults.innerHTML='<p class="muted small">Looking up product…</p>';
+    try {
+      const res=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'?fields=product_name,product_name_en,nutriments,serving_size');
+      const data=await res.json();
+      if(data.status!==1||!data.product){foodSearchResults.innerHTML='<p class="muted small">Product not found. You can enter its label values manually.</p>';return;}
+      const f=fromOFF(data.product); if(data.product.serving_size)f.serving=data.product.serving_size+' (database values may be per 100 g)';
+      showFoodResults([f],'barcode');
+    } catch { foodSearchResults.innerHTML='<p class="muted small">Couldn’t reach the product database. Check your connection and try again.</p>'; }
+  }
+  async function searchFoods(query) {
+    if(!query.trim())return;
+    foodSearchResults.innerHTML='<p class="muted small">Searching everyday foods and packaged products…</p>';
+    let everyday=[];
+    try {
+      const url='https://api.nal.usda.gov/fdc/v1/foods/search?query='+encodeURIComponent(query)+'&pageSize=10&api_key=DEMO_KEY';
+      const response=await fetch(url);
+      if(response.ok){
+        const data=await response.json();
+        everyday=(data.foods||[]).map(f=>{
+          const ns=f.foodNutrients||[];
+          const nutrient=id=>{const n=ns.find(x=>x.nutrientId===id);return number(n?.value);};
+          return {name:f.description||f.lowercaseDescription||'Food',cal:nutrient(1008),protein:nutrient(1003),carbs:nutrient(1005),fat:nutrient(1004),serving:'per 100 g',source:'USDA'};
+        }).filter(f=>f.name&&f.cal>0);
+      }
+    } catch {}
+    let packaged=[];
+    try {
+      const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(query)+'&search_simple=1&action=process&json=1&page_size=8&fields=product_name,nutriments,serving_size';
+      const response=await fetch(url);
+      if(response.ok){
+        const data=await response.json();
+        packaged=(data.products||[]).filter(p=>p.product_name&&p.nutriments).map(p=>fromOFF(p));
+      }
+    } catch {}
+    const combined=[...everyday,...packaged].filter((f,i,a)=>a.findIndex(x=>x.name.toLowerCase()===f.name.toLowerCase())===i).slice(0,15);
+    if(combined.length){showFoodResults(combined,'search');return;}
+    foodSearchResults.innerHTML='<p class="muted small">No matching foods found in either database. Try a different search or enter the nutrition label manually.</p>';
+  }
+  const safe = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const totals = () => well.foods.reduce((a,f) => ({cal:a.cal+f.cal, protein:a.protein+f.protein, carbs:a.carbs+(f.carbs||0), fat:a.fat+(f.fat||0)}),{cal:0,protein:0,carbs:0,fat:0});
+  const habits = [
+    {id:'water',name:'Drink some water',desc:'Hydration is a small win worth repeating.',icon:'◌'},
+    {id:'protein',name:'Get a protein serving',desc:'Build meals around a helpful protein source.',icon:'◒'},
+    {id:'mobility',name:'Move for 15 minutes',desc:'Stretch, walk, or do comfortable mobility work.',icon:'↗'}
+  ];
+  function updateDashboard() {
+    const t=totals(), done=habits.filter(h=>well.habits[h.id]).length;
+    $('todayCalories').textContent=t.cal.toLocaleString(); $('todayProtein').textContent=t.protein;
+    $('todayCalBar').style.width=Math.min(100,t.cal/1850*100)+'%';
+    $('todayHabits').textContent=done;
+    $('caloriesTotal').textContent=t.cal.toLocaleString(); $('proteinTotal').textContent=t.protein;
+    $('carbsTotal').textContent=t.carbs+' / 150 g'; $('fatTotal').textContent=t.fat+' / 60 g';
+    $('calorieBar').style.width=Math.min(100,t.cal/1850*100)+'%'; $('proteinBar').style.width=Math.min(100,t.protein/180*100)+'%';
+    $('progressFoodDays').textContent=t.cal.toLocaleString()+' calories'; $('progressHabitCount').textContent=done+' / 3';
+    const currentTitle=$('currentTitle')?.textContent;
+    $('progressProgram').textContent=(currentTitle && currentTitle!=='Choose a program')?currentTitle:'Not chosen yet';
+    $('todayWorkoutText').textContent=(currentTitle && currentTitle!=='Choose a program')?'Your plan is ready whenever you are.':'Choose a program or keep it a recovery day.';
+  }
+  function renderFood() {
+    const t=totals();
+    $('foodLog').innerHTML=well.foods.length ? well.foods.map(f=>'<article class="food-item"><div class="food-dot">＋</div><div class="food-copy"><strong>'+safe(f.name)+'</strong><small>'+f.protein+' g protein'+((f.carbs||f.fat)?' · '+(f.carbs||0)+' g carbs · '+(f.fat||0)+' g fat':'')+'</small></div><div class="food-kcal">'+f.cal+' cal</div><button class="remove-food" data-remove-food="'+f.id+'" aria-label="Remove '+safe(f.name)+'">×</button></article>').join('') : '<div class="empty-state"><div class="empty-icon">＋</div><h3>Your food log starts here</h3><p>Add a food above. You can keep it simple and track calories and protein first.</p></div>';
+    document.querySelectorAll('[data-remove-food]').forEach(b=>b.addEventListener('click',()=>{well.foods=well.foods.filter(f=>f.id!==b.dataset.removeFood);saveWell();renderFood();updateDashboard()}));
+  }
+  const mobilityRoutines = {
+    full: {
+      title:'Full-body mobility · 15 minutes',
+      intro:'A gentle head-to-toe session. Move slowly and breathe normally; use a smaller range if you feel stiff.',
+      steps:[
+        ['Easy breathing and posture','1 minute','Stand or sit tall. Take relaxed breaths and gently roll your shoulders back.'],
+        ['Neck turns','1 minute','Turn your head slowly to look left and right, staying in a comfortable range. Avoid rolling your head backward.'],
+        ['Shoulder circles','1 minute','Make slow circles with both shoulders, then reverse direction.'],
+        ['Wall chest opener','2 minutes','Place a forearm on a wall or door frame and gently turn your body away. Switch sides halfway; keep the stretch mild.'],
+        ['Standing upper-back rotations','2 minutes','Cross your arms over your chest and rotate gently side to side without forcing your lower back.'],
+        ['Hip hinges','2 minutes','With soft knees and hands on hips, push hips back a little and return to standing. Keep your back comfortable.'],
+        ['Supported hip shifts','2 minutes','Hold a chair or counter. Shift your weight gently side to side, keeping feet planted.'],
+        ['Calf raises and ankle circles','2 minutes','Hold support, rise onto your toes slowly, then lower. Finish with small ankle circles on each side.'],
+        ['Easy full-body reset','2 minutes','Walk in place or march gently, then take a few relaxed breaths.']
+      ]
+    },
+    morning: {
+      title:'Morning reset · 8 minutes',
+      intro:'An easy start to the day—no equipment needed.',
+      steps:[
+        ['Relaxed breathing','1 minute','Sit or stand tall and take slow, comfortable breaths.'],
+        ['Shoulder circles','1 minute','Roll shoulders slowly forward and backward.'],
+        ['Gentle neck turns','1 minute','Look left and right without forcing the movement.'],
+        ['Reach and side bend','2 minutes','Reach one arm overhead and lean slightly to the opposite side. Alternate gently.'],
+        ['Hip hinges','1 minute','Push hips back with soft knees, then stand tall again.'],
+        ['Supported calf raises','1 minute','Hold a counter or chair and raise and lower your heels slowly.'],
+        ['Easy march','1 minute','March in place at a comfortable pace.']
+      ]
+    },
+    desk: {
+      title:'Desk reset · 5 minutes',
+      intro:'A short break for long sitting days. Stay seated for any movement that feels better that way.',
+      steps:[
+        ['Shoulder rolls','1 minute','Roll shoulders slowly up, back, and down.'],
+        ['Neck turns','1 minute','Turn your head gently left and right; keep the motion small and easy.'],
+        ['Seated upper-back turns','1 minute','Sit tall with arms crossed and rotate gently each way.'],
+        ['Ankle pumps','1 minute','Lift toes and heels alternately, then make small ankle circles.'],
+        ['Stand and stretch tall','1 minute','If comfortable, stand, reach upward gently, then sit or stand with relaxed breathing.']
+      ]
+    }
+  };
+  let mobilityChecks = {};
+  function openMobilityDemo(name,cue,instruction){
+ const n=String(name||'').toLowerCase();
+ $('movementTitle').textContent=name;
+ $('movementDemoBody').innerHTML=window.goodstrideInstructorPreview?window.goodstrideInstructorPreview(name,cue)+'<p class="muted small">'+instruction+'</p>':'<p>'+instruction+'</p><p class="demo-cue">'+cue+'</p>';
+ $('movementDialog').showModal();
+}
+function renderMobilityRoutine() {
+    const select=$('mobilityRoutine');
+    if(!select)return;
+    const routine=mobilityRoutines[select.value]||mobilityRoutines.full;
+    const key=select.value;
+    mobilityChecks[key]=mobilityChecks[key]||[];
+    $('mobilityRoutineIntro').textContent=routine.intro;
+    $('mobilitySteps').innerHTML=routine.steps.map((step,i)=>'<label class="mobility-step '+(mobilityChecks[key].includes(i)?'done':'')+'"><input type="checkbox" data-mobility-step="'+i+'" '+(mobilityChecks[key].includes(i)?'checked':'')+'><span class="mobility-figure" aria-hidden="true"><svg viewBox="0 0 80 88"><circle cx="40" cy="17" r="7"/><path d="M40 25 L40 49 M40 32 L23 23 M40 32 L57 23 M40 49 L29 72 M40 49 L51 72" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M15 38 Q8 28 16 18 M64 38 Q72 28 64 18" fill="none" stroke="#D88D67" stroke-width="2.5" stroke-linecap="round" class="motion-arrow"/></svg></span><span class="mobility-step-copy"><strong>'+safe(step[0])+'</strong><small>'+safe(step[1])+'</small><span>'+safe(step[2])+'</span><button type="button" class="mini-button mobility-demo-button" data-mobility-demo="'+i+'">Watch movement</button></span></label>').join('');
+    $('mobilityProgress').textContent=mobilityChecks[key].length+' of '+routine.steps.length+' movements complete';
+    $('mobilitySteps').querySelectorAll('[data-mobility-demo]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const step=routine.steps[Number(button.dataset.mobilityDemo)];openMobilityDemo(step[0],step[1],step[2])}));
+    $('mobilitySteps').querySelectorAll('[data-mobility-step]').forEach(input=>input.addEventListener('change',()=>{
+      const i=Number(input.dataset.mobilityStep);
+      mobilityChecks[key]=input.checked?[...new Set([...mobilityChecks[key],i])]:mobilityChecks[key].filter(n=>n!==i);
+      renderMobilityRoutine();
+    }));
+  }
+  function renderHabits() {
+    $('habitList').innerHTML=habits.map(h=>'<label class="habit-item '+(well.habits[h.id]?'done':'')+'"><input class="habit-check" type="checkbox" data-habit="'+h.id+'" '+(well.habits[h.id]?'checked':'')+'><span class="well-icon">'+h.icon+'</span><span class="habit-copy"><strong>'+h.name+'</strong><p>'+h.desc+'</p></span></label>').join('');
+    document.querySelectorAll('[data-habit]').forEach(c=>c.addEventListener('change',()=>{well.habits[c.dataset.habit]=c.checked;saveWell();renderHabits();updateDashboard()}));
+    $('mobilityDone').textContent=well.extraMobility?'✓ Mobility complete today':'✓ Mark mobility complete';
+    $('mobilityDone').classList.toggle('secondary',well.extraMobility);
+  }
+  function showView(view) {
+    const map={today:'todayView',workouts:'programsView',programs:'programsView',workout:'workoutView',nutrition:'nutritionView',habits:'habitsView',progress:'progressView',profile:'profileView'};
+    document.querySelectorAll('.view').forEach(s=>s.classList.add('hidden'));
+    const target=$(map[view]||'todayView'); if(target)target.classList.remove('hidden');
+    document.querySelectorAll('.main-tabs .tab').forEach(b=>b.classList.toggle('active',b.dataset.view===(view==='programs'?'workouts':view)));
+    if(view==='workout' && typeof window.renderWorkout==='function') window.renderWorkout();
+    if(view==='workouts') $('programsView').classList.remove('hidden');
+    try { window.scrollTo({top:0,behavior:'smooth'}); } catch {}
+    updateDashboard();
+  }
+  // Existing workout code's callbacks resolve this global function, so its editor stays intact.
+  window.setTab = showView;
+  document.querySelectorAll('.main-tabs .tab').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+  document.querySelectorAll('[data-well-goto]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.wellGoto)));
+  const portionPresets = {
+    banana:[['1 small banana',101],['1 medium banana',118],['1 large banana',136]],
+    egg:[['1 large egg',50],['2 large eggs',100],['3 large eggs',150]],
+    rice:[['½ cup cooked',79],['1 cup cooked',158],['1½ cups cooked',237]],
+    chicken:[['3 oz cooked',85],['4 oz cooked',113],['6 oz cooked',170]],
+    yogurt:[['½ cup',122],['1 cup',245]],
+    oatmeal:[['½ cup cooked',117],['1 cup cooked',234]],
+    apple:[['1 small apple',149],['1 medium apple',182],['1 large apple',223]]
+  };
+  function setSuggestedPortions(name) {
+    const lower=name.toLowerCase();
+    let key=Object.keys(portionPresets).find(k=>lower.includes(k));
+    let options=key?portionPresets[key]:[['½ serving',50],['100 g (standard)',100],['1 cup (approx.)',150],['1 oz',28.35],['3 oz',85],['4 oz',113],['6 oz',170]];
+    $('foodPortion').innerHTML=options.map(o=>'<option value="'+o[1]+'">'+o[0]+'</option>').join('')+'<option value="custom">Enter grams…</option>';
+    $('portionHint').textContent=key?'Approximate portion weights; adjust if your portion differs.':'Choose a familiar portion or enter a custom weight.';
+  }
+  $('foodPortion').addEventListener('change',()=>{
+    const custom=$('foodPortion').value==='custom';
+    $('customGramsWrap').classList.toggle('hidden',!custom);
+  });
+  function addFoodFromForm() {
+    const name=$('foodName').value.trim();
+    const baseCal=$('foodCalories').value.trim()===''?NaN:Number($('foodCalories').value);
+    const baseProtein=$('foodProtein').value.trim()===''?NaN:Number($('foodProtein').value);
+    const baseCarbs=$('foodCarbs').value.trim()===''?0:Number($('foodCarbs').value);
+    const baseFat=$('foodFat').value.trim()===''?0:Number($('foodFat').value);
+    const selectedGrams=$('foodPortion').value==='custom' ? ($('foodServingGrams').value.trim()===''?NaN:Number($('foodServingGrams').value)) : Number($('foodPortion').value);
+    const grams=Number.isFinite(selectedGrams)&&selectedGrams>0?selectedGrams:100;
+    const missing=[];
+    if(!name)missing.push('food name');
+    if(!Number.isFinite(baseCal)||baseCal<0)missing.push('calories');
+    if(!Number.isFinite(baseProtein)||baseProtein<0)missing.push('protein');
+    
+    if(missing.length){$('foodFormMessage').textContent='Please check: '+missing.join(', ')+'. Select a search result again if the fields did not fill in.';return;}
+    const factor=grams/100;
+    const cal=Math.round(baseCal*factor), protein=Number((baseProtein*factor).toFixed(1)), carbs=Number((baseCarbs*factor).toFixed(1)), fat=Number((baseFat*factor).toFixed(1));
+    well.foods.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name+' ('+grams+' g)',cal,protein,carbs,fat,grams});
+    saveWell(); $('foodForm').reset(); $('foodPortion').innerHTML='<option value="100">100 g (standard)</option><option value="50">½ serving</option><option value="150">1 cup (approx.)</option><option value="28.35">1 oz</option><option value="85">3 oz</option><option value="113">4 oz</option><option value="170">6 oz</option><option value="custom">Enter grams…</option>'; $('customGramsWrap').classList.add('hidden'); $('foodServingGrams').value=100; $('foodCarbs').value=0; $('foodFat').value=0;
+    $('foodFormMessage').textContent='Added '+name+' — '+cal+' calories.';
+    renderFood(); updateDashboard();
+  }
+  $('foodForm').addEventListener('submit',e=>{e.preventDefault();addFoodFromForm()});
+  $('addFoodBtn').addEventListener('click',addFoodFromForm);
+  $('searchFoodBtn').addEventListener('click',()=>searchFoods($('foodSearch').value));
+  $('foodSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchFoods($('foodSearch').value)}});
+  $('lookupBarcodeBtn').addEventListener('click',()=>lookupBarcode($('barcodeInput').value.trim()));
+  $('barcodeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupBarcode($('barcodeInput').value.trim())}});
+  $('scanBarcodeBtn').addEventListener('click',async()=>{
+    const reader=$('barcodeReader');
+    if(scanner){
+      try{Quagga.offDetected(window.onQuaggaDetected);Quagga.stop();}catch{}
+      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';hideScannerNotice();
+      return;
+    }
+    if(!window.Quagga){scannerNotice('Barcode decoder did not load. Refresh and try again.');return;}
+    reader.classList.remove('hidden');reader.innerHTML='';
+    scannerNotice('Starting barcode scanner…');$('scanBarcodeBtn').textContent='Stop scan';
+    let lastCode='',sameCount=0,accepted=false;
+    window.onQuaggaDetected=(result)=>{
+      if(accepted)return;
+      const raw=result?.codeResult?.code||'';
+      const format=result?.codeResult?.format||'';
+      const code=String(raw).replace(/\D/g,'');
+      if(!['ean_13','ean_8','upc_a'].includes(format)||!validRetailBarcode(code,format)){
+        // Ignore noisy/partial frames instead of resetting a good candidate.
+        return;
+      }
+      if(code===lastCode)sameCount++;else{lastCode=code;sameCount=1;}
+      scannerNotice('Reading barcode… '+sameCount+'/3');
+      if(sameCount<3)return;
+      accepted=true;
+      $('barcodeInput').value=code;
+      scannerNotice('Confirmed barcode '+code+' — looking up product…');
+      try{Quagga.offDetected(window.onQuaggaDetected);Quagga.stop();}catch{}
+      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';
+      lookupBarcode(code);
+    };
+    scanner={active:true};
+    try{
+      Quagga.init({
+        inputStream:{name:'Goodstride camera',type:'LiveStream',target:reader,constraints:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},area:{top:'0%',right:'0%',left:'0%',bottom:'0%'}},
+        locator:{patchSize:'large',halfSample:false},
+        decoder:{readers:['ean_reader','ean_8_reader','upc_reader']},
+        locate:true,numOfWorkers:0
+      },(err)=>{
+        if(err){scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';scannerNotice('Barcode scanner could not start: '+(err.message||String(err)));return;}
+        Quagga.onDetected(window.onQuaggaDetected);Quagga.start();
+        scannerNotice('Camera is running — center the product barcode and hold steady.');
+      });
+    }catch(err){
+      scanner=null;reader.classList.add('hidden');reader.innerHTML='';$('scanBarcodeBtn').textContent='Scan';
+      scannerNotice('Barcode scanner could not start: '+(err?.message||String(err)));
+    }
+  });
+  $('clearFoodLog').addEventListener('click',()=>{if(!well.foods.length)return;if(confirm("Clear today's food log?")){well.foods=[];saveWell();renderFood();updateDashboard()}});
+  $('toggleMacroDetails').addEventListener('click',()=>{const el=$('macroDetails');const hidden=el.classList.toggle('hidden');$('toggleMacroDetails').textContent=hidden?'Show carbs & fat ▾':'Hide carbs & fat ▴'});
+  $('mobilityRoutine').addEventListener('change',renderMobilityRoutine);
+  $('resetMobilityRoutine').addEventListener('click',()=>{mobilityChecks[$('mobilityRoutine').value]=[];renderMobilityRoutine()});
+  $('mobilityDone').addEventListener('click',()=>{well.extraMobility=!well.extraMobility;well.habits.mobility=well.extraMobility;saveWell();renderHabits();updateDashboard()});
+  $('todayDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  renderFood();renderHabits();renderMobilityRoutine();updateDashboard();showView('today');
+})();
