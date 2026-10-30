@@ -41,6 +41,54 @@
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setIndex(idx);g.computeVertexNormals();
     const m=makeMesh(T,g,color,parent);m.material.side=T.DoubleSide;return m;
   }
+  // Implicit smooth-union body: overlapping volume fields are remeshed into ONE continuous surface.
+  function fusedBody(T,parent,color) {
+    const forms=[
+      [0,-.43,0,.285,.245,.185],       // pelvis
+      [0,-.13,0,.285,.34,.185],       // waist
+      [0,.12,0,.335,.31,.195],        // chest
+      [-.255,.245,0,.205,.185,.17],   // left shoulder slope
+      [.255,.245,0,.205,.185,.17]     // right shoulder slope
+    ];
+    const smoothMin=(a,b,k)=>{const h=Math.max(k-Math.abs(a-b),0)/k;return Math.min(a,b)-h*h*k*.25;};
+    const field=(x,y,z)=>{
+      let d=1e6;
+      for(const [cx,cy,cz,rx,ry,rz] of forms){
+        const q=Math.sqrt(((x-cx)/rx)**2+((y-cy)/ry)**2+((z-cz)/rz)**2)-1;
+        d=smoothMin(d,q*Math.min(rx,ry,rz),.115);
+      }
+      return d;
+    };
+    const step=.04,x0=-.50,x1=.50,y0=-.72,y1=.48,z0=-.34,z1=.34;
+    const nx=Math.ceil((x1-x0)/step)+1,ny=Math.ceil((y1-y0)/step)+1,nz=Math.ceil((z1-z0)/step)+1;
+    const values=new Float32Array(nx*ny*nz),id=(i,j,k)=>(i*ny+j)*nz+k;
+    for(let i=0;i<nx;i++)for(let j=0;j<ny;j++)for(let k=0;k<nz;k++)values[id(i,j,k)]=field(x0+i*step,y0+j*step,z0+k*step);
+    const tetra=[[0,5,1,6],[0,1,2,6],[0,2,3,6],[0,3,7,6],[0,7,4,6],[0,4,5,6]];
+    const cube=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+    const positions=[],normals=[];
+    const gradient=p=>{const e=.003;return new T.Vector3(field(p.x+e,p.y,p.z)-field(p.x-e,p.y,p.z),field(p.x,p.y+e,p.z)-field(p.x,p.y-e,p.z),field(p.x,p.y,p.z+e)-field(p.x,p.y,p.z-e)).normalize();};
+    const emit=(a,b,c)=>{
+      const ab=b.clone().sub(a),ac=c.clone().sub(a),face=new T.Vector3().crossVectors(ab,ac);
+      const center=a.clone().add(b).add(c).multiplyScalar(1/3),out=gradient(center);
+      if(face.dot(out)<0){const q=b;b=c;c=q;}
+      for(const p of [a,b,c]){positions.push(p.x,p.y,p.z);const n=gradient(p);normals.push(n.x,n.y,n.z);}
+    };
+    const interp=(a,b,va,vb)=>{const t=va/(va-vb);return a.clone().lerp(b,Math.max(0,Math.min(1,t)));};
+    for(let i=0;i<nx-1;i++)for(let j=0;j<ny-1;j++)for(let k=0;k<nz-1;k++){
+      const p=cube.map(([dx,dy,dz])=>new T.Vector3(x0+(i+dx)*step,y0+(j+dy)*step,z0+(k+dz)*step));
+      const v=cube.map(([dx,dy,dz])=>values[id(i+dx,j+dy,k+dz)]);
+      for(const tet of tetra){
+        const inside=tet.filter(q=>v[q]<0),outside=tet.filter(q=>v[q]>=0);
+        if(!inside.length||!outside.length)continue;
+        const cuts=[];
+        for(const a of inside)for(const b of outside)cuts.push(interp(p[a],p[b],v[a],v[b]));
+        if(cuts.length===3)emit(cuts[0],cuts[1],cuts[2]);
+        else if(cuts.length===4){emit(cuts[0],cuts[1],cuts[2]);emit(cuts[0],cuts[2],cuts[3]);}
+      }
+    }
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('normal',new T.Float32BufferAttribute(normals,3));
+    const m=makeMesh(T,g,color,parent);m.material.side=T.DoubleSide;return m;
+  }
   function createCharacter(T, scene) {
     const root=new T.Group();scene.add(root);
     // Human-shaped lower body: pelvis, thighs, calves and shoes overlap at joints.
@@ -85,7 +133,7 @@
     const arms=[];
     for(const side of [-1,1]) {
       const shoulder=new T.Group();shoulder.position.set(side*.325,.27,0);torso.add(shoulder);
-      ball(T,shoulder,skin,0,0,0,.095,.105,.095);
+
       smoothLimb(T,shoulder,[0,0,0],[side*.055,-.235,.005],.084,.072,skin);
       const elbow=new T.Group();elbow.position.set(side*.055,-.235,.005);shoulder.add(elbow);
       ball(T,elbow,skin,0,0,0,.073,.075,.072);
